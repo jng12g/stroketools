@@ -613,7 +613,6 @@ function getAvailableADNIs(state) {
 function detectIncompatibilities(recs, trace) {
   let incomp = false;
 
-  // 1. Detección de duplicidad en la misma clase
   const classesToCheck = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'];
   classesToCheck.forEach(cls => {
     const selectedInClass = drugsInClass(cls);
@@ -628,7 +627,6 @@ function detectIncompatibilities(recs, trace) {
     }
   });
 
-  // 2. Contraindicaciones absolutas y cruzadas
   if (state.drugs.metformina && state.fge < 30) {
     recs.push({ type: 'danger', tag: 'Contraindicación Absoluta', title: 'Suspender Metformina Inmediatamente', body: `El paciente presenta un Filtrado Glomerular (FGe) de <strong>${state.fge} mL/min</strong>. A estos niveles, la Metformina está formalmente contraindicada por el riesgo severo de acidosis láctica. Se sugiere sustituir la base de tratamiento por fármacos seguros en ERC avanzada (ej. arGLP-1, iDPP-4 ajustados o insulina).` });
     trace.push('FGe <30: Retirada de metformina obligatoria.');
@@ -691,7 +689,6 @@ function generateRecs(cond, target) {
   else if (cond.id === 'hepatica') { conditionHandledIntensification = handleHepatica(recs, trace, target) || conditionHandledIntensification; }
   else if (cond.id === 'fragilidad') { conditionHandledIntensification = handleFragilidad(recs, trace, target) || conditionHandledIntensification; }
 
-  // Aplicar intensificación de rescate / inicio de tratamiento si no hay condición o si está optimizada pero el azúcar sigue alto
   if (cond.id === null || (state.hba1c > target.upperBound && !conditionHandledIntensification && cond.id !== 'fragilidad' && !state.sintomatico)) {
       if (cond.id !== null) trace.push('Fármacos del condicionante optimizados pero paciente sigue fuera de objetivo -> Se aplica intensificación escalonada.');
       applyGeneralIntensification(recs, trace, target);
@@ -700,10 +697,36 @@ function generateRecs(cond, target) {
   const inTarget = state.hba1c <= target.upperBound;
   const needsAction = recs.some(r => r.type === 'add' || r.type === 'warn' || r.type === 'danger');
 
+  // EL BLOQUE QUE HA SIDO MODIFICADO PARA EXPLICAR LA OPTIMIZACIÓN
   if (!needsAction && target.target !== null && inTarget && !hasCriticalConflict) {
+    
+    let justificacion = `El paciente ha alcanzado su objetivo glucémico individualizado (<strong>${state.hba1c.toFixed(1)} %</strong> para una meta de <strong>${target.label}</strong>). El esquema actual se considera idóneo y optimizado por los siguientes motivos clínicos:<br><ul>`;
+
+    if (cond.id === 'ic') {
+      justificacion += `<li><strong>Beneficio Pronóstico (IC):</strong> El paciente está recibiendo tratamiento con iSGLT-2 (y/o análogos incretínicos si procede), familias con nivel de evidencia 1A para reducir drásticamente las hospitalizaciones por insuficiencia cardíaca y la mortalidad cardiovascular.</li>`;
+    } else if (cond.id === 'ecv') {
+      justificacion += `<li><strong>Protección Cardiovascular:</strong> Al presentar alto riesgo o evento cardiovascular establecido, el esquema ya integra terapias cardioprotectoras (iSGLT-2, arGLP-1 o arGIP/GLP-1) que han demostrado disminuir los eventos adversos mayores (MACE), protegiendo el órgano diana independientemente de la glucemia.</li>`;
+    } else if (cond.id === 'erc') {
+      justificacion += `<li><strong>Nefroprotección:</strong> El régimen incluye fármacos de primera línea para la enfermedad renal (iSGLT-2 y/o arGLP-1), que ralentizan significativamente la caída del filtrado glomerular y la progresión a nefropatía terminal.</li>`;
+    } else if (cond.id === 'obesidad') {
+      justificacion += `<li><strong>Control Ponderal Activo:</strong> Teniendo obesidad como condicionante principal, el esquema actual incorpora moléculas (arGLP-1, arGIP/GLP-1 o iSGLT-2) que favorecen una pérdida de peso clínicamente relevante, atacando la base metabólica de la resistencia a la insulina.</li>`;
+    } else if (cond.id === 'hepatica') {
+      justificacion += `<li><strong>Mejora Histológica Hepática:</strong> El tratamiento incluye opciones (arGLP-1, arGIP/GLP-1, iSGLT-2 o pioglitazona) que han evidenciado capacidad para revertir o frenar la progresión de la esteatohepatitis metabólica y reducir la inflamación.</li>`;
+    } else if (cond.id === 'fragilidad') {
+      justificacion += `<li><strong>Seguridad Geriátrica:</strong> En base a su grado de fragilidad, la prioridad es la seguridad. Su esquema actual está libre de sulfonilureas y/o se fundamenta en fármacos de muy bajo riesgo de hipoglucemias (como los iDPP-4), preservando su funcionalidad y calidad de vida.</li>`;
+    } else {
+      justificacion += `<li><strong>Eficacia y Tolerabilidad:</strong> El paciente no presenta complicaciones mayores que fuercen el uso de una familia concreta, y está logrando un excelente control glucémico y metabólico con una medicación bien tolerada y exenta de conflictos farmacológicos.</li>`;
+    }
+
+    if (hasClass('met')) {
+      justificacion += `<li><strong>Base Terapéutica Consolidada:</strong> Mantiene la Metformina como pilar del tratamiento, justificado por su probada eficacia, bajo coste y seguridad metabólica sostenida en el tiempo.</li>`;
+    }
+
+    justificacion += `</ul><br><strong>Conducta a seguir:</strong> No proceden cambios farmacológicos en este momento. Se recomienda mantener el esquema vigente y citar al paciente para su control clínico rutinario en 6 meses (revisión de HbA1c, FGe, cociente albúmina/creatinina y peso).`;
+
     recs.push({
       type: 'ok', tag: 'Paciente Optimizado', title: 'El tratamiento está clínica y farmacológicamente optimizado',
-      body: `El paciente ha alcanzado su objetivo glucémico (${state.hba1c.toFixed(1)}%) y cuenta de forma segura con las familias farmacológicas recomendadas para proteger su perfil clínico. Mantenga el esquema y realice control semestral rutinario.`
+      body: justificacion
     });
   } else if (state.hba1c > target.upperBound && target.target !== null && recs.some(r => r.type === 'add' || r.type === 'danger')) {
     recs.push({
@@ -798,7 +821,6 @@ function handleFragilidad(recs, trace, target) {
   return true; 
 }
 
-// LOGICA DE INTENSIFICACION GENERAL (ADNI vs Insulina)
 function applyGeneralIntensification(recs, trace, target) {
   const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'].filter(c => hasClass(c)).length;
   
@@ -810,7 +832,6 @@ function applyGeneralIntensification(recs, trace, target) {
     optionsText = `<br><br><strong>Aviso Crítico:</strong> No quedan más familias de fármacos orales ni incretínicos (ADNIs) seguras o clínicamente compatibles para añadir a la pauta de este paciente.`;
   }
 
-  // 1. Paciente VIRGEN de tratamiento (0 fármacos)
   if (clasesUsadas === 0) {
     if (state.hba1c >= 8.5) {
       recs.push({ type: 'add', tag: 'Inicio Intensivo', title: 'Se recomienda iniciar con Doble Terapia', body: `Al tratarse de un paciente sin tratamiento previo pero con una HbA1c altísima (≥ 8,5 %), el algoritmo prohíbe empezar con monoterapia para evitar inercia terapéutica. Se debe iniciar directamente combinando la <strong>Metformina</strong> con un fármaco de alta potencia (iSGLT-2, arGLP-1 o arGIP/GLP-1).` });
@@ -823,10 +844,9 @@ function applyGeneralIntensification(recs, trace, target) {
         recs.push({ type: 'add', tag: 'Inicio', title: 'Se recomienda iniciar Monoterapia (alternativa a Metformina)', body: `La Metformina está contraindicada por el bajo filtrado glomerular actual. Se recomienda iniciar con un <strong>iDPP-4</strong> (por su probada seguridad en ERC) o un <strong>arGLP-1</strong> si la función renal aún lo permite.` });
       }
     }
-    return; // Fin de la ruta para pacientes vírgenes
+    return;
   }
 
-  // 2. Paciente en tratamiento y MUY descompensado (HbA1c >= 8.5)
   if (state.hba1c >= 8.5) {
     if (clasesUsadas === 1) {
       recs.push({ type: 'add', tag: 'Intensificación', title: 'Se recomienda instaurar Doble Terapia inicial', body: `Al presentar una HbA1c altísima (≥ 8,5 %), el algoritmo ordena no demorar el abordaje escalonado clásico. Se debe añadir inmediatamente a su base actual un fármaco de alta potencia.${optionsText}` });
@@ -839,7 +859,6 @@ function applyGeneralIntensification(recs, trace, target) {
       trace.push(`HbA1c extrema con 3+ fármacos: Opción abierta entre 4º ADNI de rescate o paso directo a Insulinización.`);
     }
   } 
-  // 3. Paciente en tratamiento y descompensado leve/moderado (HbA1c < 8.5 pero sobre objetivo)
   else if (state.hba1c > target.upperBound) {
     if (clasesUsadas === 1) {
       recs.push({ type: 'add', tag: 'Progresión', title: 'Se recomienda asociar un segundo fármaco', body: `Para limar la diferencia hasta alcanzar el objetivo, se recomienda añadir un segundo fármaco complementario a la pauta actual.${optionsText}` });
@@ -852,9 +871,6 @@ function applyGeneralIntensification(recs, trace, target) {
   }
 }
 
-/* =================================================================
-   RENDER Y EVENTOS
-   ================================================================= */
 function renderCurrentDrugs() {
   const el = document.getElementById('currentDrugs');
   const active = Object.entries(state.drugs).filter(([k,v]) => v).map(([k]) => k);
