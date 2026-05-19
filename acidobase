@@ -49,7 +49,6 @@
     min-height: 100vh;
   }
 
-  /* ---------- Header ---------- */
   header.masthead {
     border-bottom: 1px solid var(--rule);
     background: var(--paper-tint);
@@ -64,405 +63,143 @@
     gap: 24px;
     flex-wrap: wrap;
   }
-  .brand {
-    display: flex;
-    align-items: baseline;
-    gap: 14px;
-  }
+  .brand { display: flex; align-items: baseline; gap: 14px; }
   .brand-mark {
-    font-family: "Fraunces", serif;
-    font-weight: 600;
-    font-style: italic;
-    font-size: 26px;
-    letter-spacing: -0.02em;
-    color: var(--accent);
+    font-family: "Fraunces", serif; font-weight: 600; font-style: italic;
+    font-size: 26px; letter-spacing: -0.02em; color: var(--accent);
   }
   .brand-mark::before {
-    content: "";
-    display: inline-block;
-    width: 10px; height: 10px;
-    background: var(--accent);
-    border-radius: 50%;
-    margin-right: 10px;
+    content: ""; display: inline-block; width: 10px; height: 10px;
+    background: var(--accent); border-radius: 50%; margin-right: 10px;
     transform: translateY(-2px);
   }
-  .brand-sub {
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.18em;
-    color: var(--ink-mute);
-    font-weight: 500;
-  }
-  .masthead h1 {
-    margin: 0;
-    font-family: "Fraunces", serif;
-    font-weight: 400;
-    font-size: 22px;
-    letter-spacing: -0.015em;
-    color: var(--ink);
-  }
-  .masthead h1 em {
-    font-style: italic;
-    color: var(--accent);
-  }
+  .brand-sub { font-size: 12px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--ink-mute); font-weight: 500; }
+  .masthead h1 { margin: 0; font-family: "Fraunces", serif; font-weight: 400; font-size: 22px; letter-spacing: -0.015em; color: var(--ink); }
+  .masthead h1 em { font-style: italic; color: var(--accent); }
 
-  /* ---------- Layout ---------- */
   main {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 32px;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-    gap: 28px;
+    max-width: 1400px; margin: 0 auto; padding: 32px;
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 28px;
   }
+  @media (max-width: 980px) { main { grid-template-columns: 1fr; } }
 
-  @media (max-width: 980px) {
-    main { grid-template-columns: 1fr; }
-  }
-
-  /* ---------- Panels ---------- */
-  .panel {
-    background: var(--paper);
-    border: 1px solid var(--rule);
-    border-radius: 4px;
-  }
-
+  .panel { background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; }
   .panel-header {
-    padding: 18px 24px 14px;
-    border-bottom: 1px solid var(--rule);
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
+    padding: 18px 24px 14px; border-bottom: 1px solid var(--rule);
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
   }
-  .panel-header h2 {
-    margin: 0;
-    font-family: "Fraunces", serif;
-    font-weight: 500;
-    font-size: 19px;
-    letter-spacing: -0.01em;
-  }
-  .panel-header .meta {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.16em;
-    color: var(--ink-mute);
-  }
+  .panel-header h2 { margin: 0; font-family: "Fraunces", serif; font-weight: 500; font-size: 19px; letter-spacing: -0.01em; }
+  .panel-header .meta { font-size: 11px; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink-mute); }
 
-  /* ---------- Sections (input) ---------- */
-  .section {
-    border-bottom: 1px solid var(--rule);
-    padding: 20px 24px;
-  }
+  .section { border-bottom: 1px solid var(--rule); padding: 20px 24px; }
   .section:last-child { border-bottom: 0; }
   .section-title {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.18em;
-    color: var(--ink-mute);
-    font-weight: 600;
-    margin: 0 0 14px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em;
+    color: var(--ink-mute); font-weight: 600; margin: 0 0 14px; display: flex; align-items: center; gap: 8px;
   }
-  .section-title::before {
-    content: "";
-    width: 18px; height: 1px;
-    background: var(--ink-mute);
+  .section-title::before { content: ""; width: 18px; height: 1px; background: var(--ink-mute); }
+
+  .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 6px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12px; font-weight: 500; color: var(--ink-soft); letter-spacing: 0.01em; }
+  .field-hint { font-size: 11px; color: var(--ink-mute); font-style: italic; }
+
+  input[type="number"], input[type="text"], select {
+    width: 100%; background: var(--paper-tint); border: 1px solid var(--rule);
+    border-radius: 3px; padding: 8px 10px; font-family: inherit; font-size: 14px;
+    color: var(--ink); transition: border-color 0.15s, background 0.15s;
+  }
+  input[type="number"]:focus, input[type="text"]:focus, select:focus {
+    outline: none; border-color: var(--accent); background: var(--paper);
   }
 
-  .row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 14px;
-    margin-bottom: 6px;
-  }
-
-  .field {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .field label {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--ink-soft);
-    letter-spacing: 0.01em;
-  }
-  .field-hint {
-    font-size: 11px;
-    color: var(--ink-mute);
-    font-style: italic;
-  }
-
-  input[type="number"],
-  input[type="text"],
-  select {
-    width: 100%;
-    background: var(--paper-tint);
-    border: 1px solid var(--rule);
-    border-radius: 3px;
-    padding: 8px 10px;
-    font-family: inherit;
-    font-size: 14px;
-    color: var(--ink);
-    transition: border-color 0.15s, background 0.15s;
-  }
-  input[type="number"]:focus,
-  input[type="text"]:focus,
-  select:focus {
-    outline: none;
-    border-color: var(--accent);
-    background: var(--paper);
-  }
-
-  /* ---------- Checkbox cards ---------- */
-  .check-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 8px;
-  }
-
+  .check-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
   .check {
-    position: relative;
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 10px 12px;
-    border: 1px solid var(--rule);
-    border-radius: 3px;
-    cursor: pointer;
-    background: var(--paper);
-    transition: all 0.15s;
-    user-select: none;
+    position: relative; display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 12px; border: 1px solid var(--rule); border-radius: 3px;
+    cursor: pointer; background: var(--paper); transition: all 0.15s; user-select: none;
   }
-  .check:hover {
-    border-color: var(--rule-strong);
-    background: var(--paper-tint);
-  }
-  .check input {
-    margin: 2px 0 0;
-    accent-color: var(--accent);
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-  .check.checked {
-    background: var(--paper-tint);
-    border-color: var(--accent);
-    box-shadow: inset 3px 0 0 var(--accent);
-  }
-  .check-body {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    line-height: 1.35;
-  }
-  .check-label {
-    font-weight: 500;
-    font-size: 13.5px;
-    color: var(--ink);
-  }
-  .check-desc {
-    font-size: 11.5px;
-    color: var(--ink-mute);
-  }
+  .check:hover { border-color: var(--rule-strong); background: var(--paper-tint); }
+  .check input { margin: 2px 0 0; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+  .check.checked { background: var(--paper-tint); border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+  .check-body { display: flex; flex-direction: column; gap: 2px; line-height: 1.35; }
+  .check-label { font-weight: 500; font-size: 13.5px; color: var(--ink); }
+  .check-desc { font-size: 11.5px; color: var(--ink-mute); }
 
   .check.evidence { border-left: 3px solid var(--evidence); }
-  .check.evidence.checked {
-    box-shadow: inset 3px 0 0 var(--evidence);
-    border-left-color: transparent;
-  }
+  .check.evidence.checked { box-shadow: inset 3px 0 0 var(--evidence); border-left-color: transparent; }
   .ev-badge {
-    display: inline-block;
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    background: var(--evidence-soft);
-    color: var(--evidence);
-    padding: 1px 5px;
-    border-radius: 2px;
-    font-weight: 600;
-    margin-left: 6px;
-    vertical-align: 1px;
+    display: inline-block; font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em;
+    background: var(--evidence-soft); color: var(--evidence); padding: 1px 5px;
+    border-radius: 2px; font-weight: 600; margin-left: 6px; vertical-align: 1px;
   }
 
-  /* ---------- Sub-fields (conditional) ---------- */
   .sub-field {
-    margin-top: 10px;
-    padding: 10px 12px;
-    background: var(--paper-tint);
-    border-left: 2px solid var(--rule-strong);
-    font-size: 13px;
-    display: none;
+    margin-top: 10px; padding: 10px 12px; background: var(--paper-tint);
+    border-left: 2px solid var(--rule-strong); font-size: 13px; display: none;
   }
   .sub-field.active { display: block; }
   .sub-field label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--ink-mute);
-    font-weight: 600;
-    display: block;
-    margin-bottom: 4px;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--ink-mute); font-weight: 600; display: block; margin-bottom: 4px;
   }
 
-  /* Frailty radio group */
-  .radio-group {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-top: 4px;
-  }
+  .radio-group { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
   .radio-pill {
-    border: 1px solid var(--rule);
-    background: var(--paper);
-    padding: 5px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.15s;
-    color: var(--ink-soft);
+    border: 1px solid var(--rule); background: var(--paper); padding: 5px 10px;
+    border-radius: 999px; font-size: 12px; cursor: pointer; transition: all 0.15s; color: var(--ink-soft);
   }
   .radio-pill input { display: none; }
-  .radio-pill.selected {
-    background: var(--ink);
-    color: var(--paper);
-    border-color: var(--ink);
-  }
+  .radio-pill.selected { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
-  /* ---------- HbA1c slider ---------- */
-  .hba1c-control {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-top: 4px;
-  }
+  .hba1c-control { display: flex; align-items: center; gap: 14px; margin-top: 4px; }
   .hba1c-value {
-    font-family: "Fraunces", serif;
-    font-size: 32px;
-    font-weight: 500;
-    color: var(--accent);
-    letter-spacing: -0.02em;
-    min-width: 80px;
+    font-family: "Fraunces", serif; font-size: 32px; font-weight: 500;
+    color: var(--accent); letter-spacing: -0.02em; min-width: 80px;
   }
-  .hba1c-value .unit {
-    font-size: 14px;
-    color: var(--ink-mute);
-    font-weight: 400;
-    margin-left: 2px;
-  }
-  input[type="range"] {
-    flex: 1;
-    accent-color: var(--accent);
-  }
+  .hba1c-value .unit { font-size: 14px; color: var(--ink-mute); font-weight: 400; margin-left: 2px; }
+  input[type="range"] { flex: 1; accent-color: var(--accent); }
 
-  /* ---------- OUTPUT panel ---------- */
   .output-panel { position: sticky; top: 24px; align-self: start; }
-
   .summary {
-    padding: 26px 28px 22px;
-    background: linear-gradient(180deg, var(--paper-tint) 0%, var(--paper) 100%);
+    padding: 26px 28px 22px; background: linear-gradient(180deg, var(--paper-tint) 0%, var(--paper) 100%);
     border-bottom: 1px solid var(--rule);
   }
-
-  .target-block {
-    display: flex;
-    align-items: baseline;
-    gap: 16px;
-    margin-bottom: 4px;
-  }
-  .target-label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.18em;
-    color: var(--ink-mute);
-    font-weight: 600;
-  }
+  .target-block { display: flex; align-items: baseline; gap: 16px; margin-bottom: 4px; }
+  .target-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--ink-mute); font-weight: 600; }
   .target-value {
-    font-family: "Fraunces", serif;
-    font-size: 44px;
-    font-weight: 500;
-    letter-spacing: -0.02em;
-    color: var(--ink);
-    line-height: 1;
+    font-family: "Fraunces", serif; font-size: 44px; font-weight: 500;
+    letter-spacing: -0.02em; color: var(--ink); line-height: 1;
   }
-  .target-value.muted {
-    font-size: 22px;
-    color: var(--ink-soft);
-    font-style: italic;
-  }
+  .target-value.muted { font-size: 22px; color: var(--ink-soft); font-style: italic; }
   .target-status {
-    margin-top: 12px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 5px 12px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.02em;
+    margin-top: 12px; display: inline-flex; align-items: center; gap: 8px;
+    padding: 5px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: 0.02em;
   }
   .target-status.ok { background: var(--evidence-soft); color: var(--evidence); }
   .target-status.no { background: var(--danger-soft); color: var(--danger); }
   .target-status.warn { background: var(--warn-soft); color: var(--warn); }
-  .target-status::before {
-    content: "";
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: currentColor;
-  }
+  .target-status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 
-  .conditioner {
-    margin-top: 18px;
-    padding-top: 18px;
-    border-top: 1px solid var(--rule);
-  }
+  .conditioner { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--rule); }
   .conditioner .target-label { margin-bottom: 8px; display: block; }
-  .conditioner-name {
-    font-family: "Fraunces", serif;
-    font-size: 22px;
-    font-weight: 500;
-    color: var(--accent);
-    font-style: italic;
-  }
-  .conditioner-meta {
-    font-size: 12px;
-    color: var(--ink-mute);
-    margin-top: 4px;
-  }
+  .conditioner-name { font-family: "Fraunces", serif; font-size: 22px; font-weight: 500; color: var(--accent); font-style: italic; }
+  .conditioner-meta { font-size: 12px; color: var(--ink-mute); margin-top: 4px; }
 
-  /* ---------- Recommendation blocks ---------- */
-  .rec-section {
-    padding: 22px 28px;
-    border-bottom: 1px solid var(--rule);
-  }
+  .rec-section { padding: 22px 28px; border-bottom: 1px solid var(--rule); }
   .rec-section:last-child { border-bottom: 0; }
-
   .rec-title {
-    font-family: "Fraunces", serif;
-    font-size: 15px;
-    font-weight: 500;
-    margin: 0 0 10px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    font-family: "Fraunces", serif; font-size: 15px; font-weight: 500; margin: 0 0 10px;
+    display: flex; align-items: center; gap: 10px;
   }
   .rec-title::before {
-    content: "";
-    display: inline-block;
-    width: 4px; height: 14px;
-    background: var(--accent);
-    border-radius: 1px;
+    content: ""; display: inline-block; width: 4px; height: 14px;
+    background: var(--accent); border-radius: 1px;
   }
 
   .rec-card {
-    background: var(--paper-tint);
-    border: 1px solid var(--rule);
-    border-radius: 3px;
-    padding: 14px 16px;
-    margin-bottom: 10px;
-    position: relative;
+    background: var(--paper-tint); border: 1px solid var(--rule); border-radius: 3px;
+    padding: 14px 16px; margin-bottom: 10px; position: relative;
   }
   .rec-card:last-child { margin-bottom: 0; }
 
@@ -477,166 +214,58 @@
   .rec-card.ok { border-left: 3px solid var(--evidence); background: #E4EFE9; }
   .rec-card.ok .rec-card-tag { color: var(--evidence); }
 
-  .rec-card-tag {
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 0.16em;
-    font-weight: 700;
-    margin-bottom: 6px;
-  }
-  .rec-card-title {
-    font-weight: 600;
-    font-size: 14.5px;
-    color: var(--ink);
-    margin-bottom: 4px;
-  }
-  .rec-card-body {
-    font-size: 13px;
-    color: var(--ink-soft);
-    line-height: 1.5;
-  }
+  .rec-card-tag { font-size: 10px; text-transform: uppercase; letter-spacing: 0.16em; font-weight: 700; margin-bottom: 6px; }
+  .rec-card-title { font-weight: 600; font-size: 14.5px; color: var(--ink); margin-bottom: 4px; }
+  .rec-card-body { font-size: 13px; color: var(--ink-soft); line-height: 1.5; }
   .rec-card-body strong { color: var(--ink); }
 
-  .drug-line {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin: 8px 0;
-  }
+  .drug-line { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
   .drug-pill {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 10px;
-    background: var(--paper);
-    border: 1px solid var(--rule-strong);
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--ink);
-    font-family: "JetBrains Mono", monospace;
-    letter-spacing: -0.01em;
+    display: inline-flex; align-items: center; padding: 3px 10px; background: var(--paper);
+    border: 1px solid var(--rule-strong); border-radius: 999px; font-size: 12px; font-weight: 500;
+    color: var(--ink); font-family: "JetBrains Mono", monospace; letter-spacing: -0.01em;
   }
   .drug-pill.current { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-  
-  .trace {
-    font-size: 12px;
-    line-height: 1.6;
-    color: var(--ink-soft);
-  }
-  .trace ol {
-    padding-left: 0;
-    list-style: none;
-    counter-reset: step;
-    margin: 0;
-  }
+
+  .trace { font-size: 12px; line-height: 1.6; color: var(--ink-soft); }
+  .trace ol { padding-left: 0; list-style: none; counter-reset: step; margin: 0; }
   .trace li {
-    counter-increment: step;
-    padding: 4px 0 4px 30px;
-    position: relative;
-    border-bottom: 1px dashed var(--rule);
+    counter-increment: step; padding: 4px 0 4px 30px; position: relative; border-bottom: 1px dashed var(--rule);
   }
   .trace li:last-child { border-bottom: 0; }
   .trace li::before {
-    content: counter(step, decimal-leading-zero);
-    position: absolute;
-    left: 0; top: 4px;
-    font-family: "JetBrains Mono", monospace;
-    font-size: 10px;
-    color: var(--accent);
-    font-weight: 600;
+    content: counter(step, decimal-leading-zero); position: absolute; left: 0; top: 4px;
+    font-family: "JetBrains Mono", monospace; font-size: 10px; color: var(--accent); font-weight: 600;
   }
 
-  .empty-state {
-    padding: 40px 28px;
-    text-align: center;
-    color: var(--ink-mute);
-    font-style: italic;
-    font-family: "Fraunces", serif;
-    font-size: 15px;
-  }
+  .empty-state { padding: 40px 28px; text-align: center; color: var(--ink-mute); font-style: italic; font-family: "Fraunces", serif; font-size: 15px; }
 
   footer {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 24px 32px 48px;
-    font-size: 11px;
-    color: var(--ink-mute);
-    line-height: 1.6;
-    border-top: 1px solid var(--rule);
-    margin-top: 20px;
+    max-width: 1400px; margin: 0 auto; padding: 24px 32px 48px; font-size: 11px;
+    color: var(--ink-mute); line-height: 1.6; border-top: 1px solid var(--rule); margin-top: 20px;
   }
-  footer .ref {
-    font-family: "JetBrains Mono", monospace;
-    color: var(--accent);
-  }
+  footer .ref { font-family: "JetBrains Mono", monospace; color: var(--accent); }
 
   .reset-btn {
-    background: transparent;
-    border: 1px solid var(--rule-strong);
-    border-radius: 3px;
-    padding: 6px 12px;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--ink-soft);
-    cursor: pointer;
-    font-family: inherit;
-    font-weight: 500;
-    transition: all 0.15s;
+    background: transparent; border: 1px solid var(--rule-strong); border-radius: 3px;
+    padding: 6px 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--ink-soft); cursor: pointer; font-family: inherit; font-weight: 500; transition: all 0.15s;
   }
-  .reset-btn:hover {
-    background: var(--ink);
-    color: var(--paper);
-    border-color: var(--ink);
-  }
+  .reset-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
-  .drug-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 8px;
-  }
-
+  .drug-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
   .drug-class {
-    border: 1px solid var(--rule);
-    border-radius: 3px;
-    padding: 10px 12px;
-    background: var(--paper);
-    transition: all 0.15s;
+    border: 1px solid var(--rule); border-radius: 3px; padding: 10px 12px;
+    background: var(--paper); transition: all 0.15s;
   }
-  .drug-class.has-active {
-    border-color: var(--accent);
-    background: var(--paper-tint);
-  }
-  .drug-class-title {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--ink-mute);
-    font-weight: 600;
-    margin-bottom: 8px;
-  }
+  .drug-class.has-active { border-color: var(--accent); background: var(--paper-tint); }
+  .drug-class-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-mute); font-weight: 600; margin-bottom: 8px; }
   .drug-class.has-active .drug-class-title { color: var(--accent); }
 
-  .drug-options {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .drug-option {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    cursor: pointer;
-    padding: 3px 0;
-    color: var(--ink-soft);
-  }
+  .drug-options { display: flex; flex-direction: column; gap: 4px; }
+  .drug-option { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; padding: 3px 0; color: var(--ink-soft); }
   .drug-option input { accent-color: var(--accent); }
-  .drug-option input:checked + span {
-    color: var(--ink);
-    font-weight: 600;
-  }
+  .drug-option input:checked + span { color: var(--ink); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -709,7 +338,6 @@
     <div class="section">
       <h3 class="section-title">Condicionantes clínicos (prioridad ←→)</h3>
       <div class="check-grid">
-
         <label class="check evidence" data-check="ic">
           <input type="checkbox" id="ic">
           <span class="check-body">
@@ -717,7 +345,6 @@
             <span class="check-desc">Cualquier FE; con o sin descompensación</span>
           </span>
         </label>
-
         <label class="check evidence" data-check="ecv">
           <input type="checkbox" id="ecv">
           <span class="check-body">
@@ -725,7 +352,6 @@
             <span class="check-desc">C. isquémica, ictus/AIT, EAP, ateromatosis significativa</span>
           </span>
         </label>
-
         <label class="check evidence" data-check="rcvAlto">
           <input type="checkbox" id="rcvAlto">
           <span class="check-body">
@@ -733,7 +359,6 @@
             <span class="check-desc">≥3 FRCV (HTA, dislipemia, tabaco, ERC, albuminuria, obesidad, AF precoz)</span>
           </span>
         </label>
-
         <label class="check evidence" data-check="erc">
           <input type="checkbox" id="erc">
           <span class="check-body">
@@ -741,7 +366,6 @@
             <span class="check-desc">FG &lt; 60 o albuminuria persistente</span>
           </span>
         </label>
-
         <label class="check" data-check="obesidad">
           <input type="checkbox" id="obesidad">
           <span class="check-body">
@@ -749,7 +373,6 @@
             <span class="check-desc">Empeora el control y eleva riesgo cardiometabólico</span>
           </span>
         </label>
-
         <label class="check" data-check="hepatica">
           <input type="checkbox" id="hepatica">
           <span class="check-body">
@@ -757,7 +380,6 @@
             <span class="check-desc">MASLD / MASH (antes EHGNA / EHNA)</span>
           </span>
         </label>
-
         <label class="check" data-check="fragilidad">
           <input type="checkbox" id="fragilidad">
           <span class="check-body">
@@ -765,7 +387,6 @@
             <span class="check-desc">Comorbilidades, polifarmacia, esperanza vida reducida</span>
           </span>
         </label>
-
       </div>
 
       <div class="sub-field" id="fragilidadGrade">
@@ -792,14 +413,12 @@
     <div class="section">
       <h3 class="section-title">Tratamiento actual (qué toma ya)</h3>
       <div class="drug-grid">
-
         <div class="drug-class" data-drugclass="met">
           <div class="drug-class-title">Biguanida</div>
           <div class="drug-options">
             <label class="drug-option"><input type="checkbox" data-drug="metformina"><span>Metformina</span></label>
           </div>
         </div>
-
         <div class="drug-class" data-drugclass="isglt2">
           <div class="drug-class-title">iSGLT-2</div>
           <div class="drug-options">
@@ -809,7 +428,6 @@
             <label class="drug-option"><input type="checkbox" data-drug="ertugliflozina"><span>Ertugliflozina</span></label>
           </div>
         </div>
-
         <div class="drug-class" data-drugclass="arglp">
           <div class="drug-class-title">arGLP-1</div>
           <div class="drug-options">
@@ -819,14 +437,12 @@
             <label class="drug-option"><input type="checkbox" data-drug="exenatida"><span>Exenatida / lixisenatida</span></label>
           </div>
         </div>
-
         <div class="drug-class" data-drugclass="argip">
           <div class="drug-class-title">arGIP/GLP-1</div>
           <div class="drug-options">
             <label class="drug-option"><input type="checkbox" data-drug="tirzepatida"><span>Tirzepatida</span></label>
           </div>
         </div>
-
         <div class="drug-class" data-drugclass="idpp4">
           <div class="drug-class-title">iDPP-4</div>
           <div class="drug-options">
@@ -836,7 +452,6 @@
             <label class="drug-option"><input type="checkbox" data-drug="saxagliptina"><span>Saxagliptina</span></label>
           </div>
         </div>
-
         <div class="drug-class" data-drugclass="su">
           <div class="drug-class-title">Sulfonilureas / Glinidas</div>
           <div class="drug-options">
@@ -845,14 +460,12 @@
             <label class="drug-option"><input type="checkbox" data-drug="repaglinida"><span>Repaglinida</span></label>
           </div>
         </div>
-
         <div class="drug-class" data-drugclass="pio">
           <div class="drug-class-title">Tiazolidindiona</div>
           <div class="drug-options">
             <label class="drug-option"><input type="checkbox" data-drug="pioglitazona"><span>Pioglitazona</span></label>
           </div>
         </div>
-
         <div class="drug-class" data-drugclass="ins">
           <div class="drug-class-title">Insulina</div>
           <div class="drug-options">
@@ -860,7 +473,6 @@
             <label class="drug-option"><input type="checkbox" data-drug="insulinaPrandial"><span>Prandial / mezcla</span></label>
           </div>
         </div>
-
       </div>
     </div>
   </section>
@@ -942,26 +554,11 @@ const state = {
 };
 
 const DRUG_LABELS = {
-  metformina: 'Metformina',
-  empagliflozina: 'Empagliflozina',
-  dapagliflozina: 'Dapagliflozina',
-  canagliflozina: 'Canagliflozina',
-  ertugliflozina: 'Ertugliflozina',
-  semaglutida: 'Semaglutida',
-  dulaglutida: 'Dulaglutida',
-  liraglutida: 'Liraglutida',
-  exenatida: 'Exenatida',
-  tirzepatida: 'Tirzepatida',
-  sitagliptina: 'Sitagliptina',
-  linagliptina: 'Linagliptina',
-  vildagliptina: 'Vildagliptina',
-  saxagliptina: 'Saxagliptina',
-  glimepirida: 'Glimepirida',
-  gliclazida: 'Gliclazida',
-  repaglinida: 'Repaglinida',
-  pioglitazona: 'Pioglitazona',
-  insulinaBasal: 'Insulina basal',
-  insulinaPrandial: 'Insulina prandial'
+  metformina: 'Metformina', empagliflozina: 'Empagliflozina', dapagliflozina: 'Dapagliflozina', canagliflozina: 'Canagliflozina', ertugliflozina: 'Ertugliflozina',
+  semaglutida: 'Semaglutida', dulaglutida: 'Dulaglutida', liraglutida: 'Liraglutida', exenatida: 'Exenatida', tirzepatida: 'Tirzepatida',
+  sitagliptina: 'Sitagliptina', linagliptina: 'Linagliptina', vildagliptina: 'Vildagliptina', saxagliptina: 'Saxagliptina',
+  glimepirida: 'Glimepirida', gliclazida: 'Gliclazida', repaglinida: 'Repaglinida', pioglitazona: 'Pioglitazona',
+  insulinaBasal: 'Insulina basal', insulinaPrandial: 'Insulina prandial'
 };
 
 const DRUG_CLASS = {
@@ -970,8 +567,7 @@ const DRUG_CLASS = {
   semaglutida: 'arglp', dulaglutida: 'arglp', liraglutida: 'arglp', exenatida: 'arglp',
   tirzepatida: 'argip',
   sitagliptina: 'idpp4', linagliptina: 'idpp4', vildagliptina: 'idpp4', saxagliptina: 'idpp4',
-  glimepirida: 'su', gliclazida: 'su', repaglinida: 'su',
-  pioglitazona: 'pio',
+  glimepirida: 'su', gliclazida: 'su', repaglinida: 'su', pioglitazona: 'pio',
   insulinaBasal: 'ins', insulinaPrandial: 'ins'
 };
 
@@ -998,129 +594,76 @@ function getTarget() {
   const sinComplicaciones = !state.ic && !state.ecv && !state.erc && !state.hepatica && !state.rcvAlto;
 
   if (state.fragilidad && state.fragGrade === 'muyGrave') {
-    return { 
-      target: null, 
-      label: 'Evitar síntomas', 
-      rationale: 'Fragilidad muy grave o esperanza de vida limitada. No hay objetivo numérico; se prioriza la calidad de vida y se deben evitar síntomas hiper/hipoglucémicos.', 
-      upperBound: 9.0
-    };
+    return { target: null, label: 'Evitar síntomas', rationale: 'Fragilidad muy grave o esperanza de vida limitada. No hay objetivo numérico; se prioriza evitar síntomas hiper/hipoglucémicos.', upperBound: 9.0 };
   }
-  
   if (state.deterioro || (state.fragilidad && (state.fragGrade === 'grave' || state.fragGrade === 'moderada'))) {
-    return { 
-      target: 8.5, 
-      label: '7,5 - 8,5 %', 
-      rationale: 'Fragilidad moderada-grave (deterioro cognitivo y/o limitación funcional). El objetivo se flexibiliza para extremar la precaución ante hipoglucemias.',
-      upperBound: 8.5
-    };
+    return { target: 8.5, label: '7,5 - 8,5 %', rationale: 'Fragilidad moderada-grave (deterioro cognitivo/funcional). Especial precaución ante hipoglucemias.', upperBound: 8.5 };
   }
-  
   if (!state.fragilidad && sinComplicaciones && (state.dxReciente || (state.tiempoDx <= 10 && state.edad <= 75))) {
-    return { 
-      target: 6.5, 
-      label: '< 6,5 %', 
-      rationale: 'Paciente sin fragilidad ni complicaciones en sus primeros 10 años de diagnóstico: el objetivo estricto previene complicaciones a largo plazo (memoria metabólica).',
-      upperBound: 6.5
-    };
+    return { target: 6.5, label: '< 6,5 %', rationale: 'Paciente joven o <10 años de evolución sin complicaciones: objetivo estricto (memoria metabólica).', upperBound: 6.5 };
   }
-  
   if (!state.fragilidad && sinComplicaciones && (state.tiempoDx > 10 || state.edad > 75)) {
-    return { 
-      target: 7.0, 
-      label: '≤ 7,0 %', 
-      rationale: 'Paciente de larga evolución (>10 años) o edad > 75 años, sin complicaciones macro/microvasculares instauradas.',
-      upperBound: 7.0
-    };
+    return { target: 7.0, label: '≤ 7,0 %', rationale: 'Paciente de larga evolución o > 75 años sin complicaciones.', upperBound: 7.0 };
   }
-  
-  return { 
-    target: 7.0, 
-    label: '< 7,0 %', 
-    rationale: 'Objetivo individualizado general por presencia de comorbilidad establecida sin criterios de fragilidad.',
-    upperBound: 7.0
-  };
+  return { target: 7.0, label: '< 7,0 %', rationale: 'Objetivo individualizado general por presencia de comorbilidad establecida.', upperBound: 7.0 };
 }
 
 function generateRecs(cond, target) {
   const recs = [];
   const trace = [];
+  let conditionHandledIntensification = false;
 
   trace.push(`Evaluación: HbA1c actual de ${state.hba1c.toFixed(1)} % frente a objetivo de ${target.label}`);
-  trace.push(`Condicionante rector: ${cond.name}`);
 
-  // Alertas transversales
-  if (state.drugs.metformina) {
-    if (state.fge < 30) {
-      recs.push({
-        type: 'danger', tag: 'Contraindicación', title: 'Se recomienda suspender Metformina',
-        body: `El paciente presenta un FGe de <strong>${state.fge} mL/min</strong>. La <strong>Metformina</strong> está formalmente contraindicada por debajo de 30 mL/min y debe ser suspendida inmediatamente.`
-      });
-      trace.push('FGe <30: Retirada de metformina obligatoria.');
-    } else if (state.fge < 45) {
-      recs.push({
-        type: 'warn', tag: 'Ajuste de dosis', title: 'Se recomienda reducir dosis de Metformina',
-        body: `Con un FGe entre 30 y 45 mL/min, se debe reducir la dosis de <strong>Metformina</strong> al 50% de la máxima tolerada y aumentar la monitorización de la función renal.`
-      });
-      trace.push('FGe 30-45: Ajuste de metformina al 50%.');
-    }
+  if (state.drugs.metformina && state.fge < 30) {
+    recs.push({ type: 'danger', tag: 'Contraindicación', title: 'Se recomienda suspender Metformina', body: `El paciente presenta un FGe de <strong>${state.fge} mL/min</strong>. La <strong>Metformina</strong> está formalmente contraindicada por debajo de 30 mL/min.` });
+    trace.push('FGe <30: Retirada de metformina obligatoria.');
+  } else if (state.drugs.metformina && state.fge < 45) {
+    recs.push({ type: 'warn', tag: 'Ajuste de dosis', title: 'Se recomienda reducir dosis de Metformina', body: `Con un FGe entre 30 y 45 mL/min, reducir dosis de <strong>Metformina</strong> al 50%.` });
   }
 
   if (hasClass('isglt2') && state.fge < 20) {
-    recs.push({
-      type: 'danger', tag: 'Reevaluar', title: 'Atención al uso de iSGLT-2 con FGe < 20',
-      body: `Los <strong>iSGLT-2 (empagliflozina, dapagliflozina, canagliflozina)</strong> no se recomiendan iniciar con FGe < 20 mL/min/1,73 m². En pacientes que ya lo tomaban y su función renal decae, debe reevaluarse su continuidad según protocolo nefrológico.`
-    });
-    trace.push('FGe <20 en paciente con iSGLT-2: Reevaluación requerida.');
+    recs.push({ type: 'danger', tag: 'Reevaluar', title: 'Atención al uso de iSGLT-2 con FGe < 20', body: `Los <strong>iSGLT-2</strong> no se recomiendan iniciar con FGe < 20. Debe reevaluarse su continuidad.` });
   }
 
   if (hasClass('idpp4') && (hasClass('arglp') || hasClass('argip'))) {
-    recs.push({
-      type: 'danger', tag: 'Asociación no sinérgica', title: 'Se recomienda retirar iDPP-4',
-      body: `El uso concomitante de <strong>iDPP-4 (ej. sitagliptina, linagliptina)</strong> junto a análogos inyectables <strong>arGLP-1 o arGIP/GLP-1</strong> carece de sinergia terapéutica (mismo mecanismo incretínico). Se debe suspender el iDPP-4 y mantener el análogo.`
-    });
-    trace.push('Incompatibilidad detectada: iDPP-4 solapado con arGLP-1/arGIP.');
+    recs.push({ type: 'danger', tag: 'Asociación no sinérgica', title: 'Se recomienda retirar iDPP-4', body: `Incompatibilidad: Suspender iDPP-4 al estar pautado un análogo inyectable (arGLP-1 o arGIP-GLP1) ya que carecen de sinergia al compartir mecanismo.` });
   }
 
   if (state.sintomatico && state.hba1c >= 8.5) {
-    recs.push({
-      type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulina + Metformina',
-      body: `Ante la presencia de clínica cardinal grave (poliuria, polidipsia, pérdida de peso) con HbA1c ≥ 8,5 %, las guías indican el inicio inmediato de <strong>insulina (basal o pauta completa) combinada con Metformina</strong>. Esta insulinización servirá para frenar la glucotoxicidad y puede ser de carácter transitorio.`
-    });
+    recs.push({ type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulina + Metformina', body: `Ante clínica cardinal grave con HbA1c ≥ 8,5 %, iniciar inmediato de <strong>insulina combinada con Metformina</strong> para frenar glucotoxicidad.` });
     trace.push('Descompensación grave sintomática: Insulinización de rescate.');
+    conditionHandledIntensification = true; 
   } else if (state.sintomatico) {
-    recs.push({
-      type: 'warn', tag: 'Clínica', title: 'Se recomienda investigar desencadenante',
-      body: `Si el paciente presenta clínica cardinal, es imperativo investigar desencadenantes activos (corticoesteroides, infecciones, neoplasias), medir cetonuria y valorar el apoyo insulínico temporal.`
-    });
+    recs.push({ type: 'warn', tag: 'Clínica', title: 'Se recomienda investigar desencadenante', body: `Investigar desencadenantes activos (corticoesteroides, infecciones) y valorar apoyo insulínico temporal.` });
   }
 
-  // Lógica de condicionantes
-  if (cond.id === 'ic') { handleIC(recs, trace, target); }
-  else if (cond.id === 'ecv') { handleECV(recs, trace, target); }
-  else if (cond.id === 'erc') { handleERC(recs, trace, target); }
-  else if (cond.id === 'obesidad') { handleObesidad(recs, trace, target); }
-  else if (cond.id === 'hepatica') { handleHepatica(recs, trace, target); }
-  else if (cond.id === 'fragilidad') { handleFragilidad(recs, trace, target); }
-  else { handleByHbA1c(recs, trace, target); }
+  if (cond.id === 'ic') { conditionHandledIntensification = handleIC(recs, trace, target) || conditionHandledIntensification; }
+  else if (cond.id === 'ecv') { conditionHandledIntensification = handleECV(recs, trace, target) || conditionHandledIntensification; }
+  else if (cond.id === 'erc') { conditionHandledIntensification = handleERC(recs, trace, target) || conditionHandledIntensification; }
+  else if (cond.id === 'obesidad') { conditionHandledIntensification = handleObesidad(recs, trace, target) || conditionHandledIntensification; }
+  else if (cond.id === 'hepatica') { conditionHandledIntensification = handleHepatica(recs, trace, target) || conditionHandledIntensification; }
+  else if (cond.id === 'fragilidad') { conditionHandledIntensification = handleFragilidad(recs, trace, target) || conditionHandledIntensification; }
 
-  // Control de estado optimizado y seguimiento
+  if (cond.id === null) {
+      applyGeneralIntensification(recs, trace, target);
+  } else if (state.hba1c > target.upperBound && !conditionHandledIntensification && cond.id !== 'fragilidad' && !state.sintomatico) {
+      trace.push('Fármacos del condicionante optimizados pero paciente fuera de objetivo -> Activando intensificación algorítmica.');
+      applyGeneralIntensification(recs, trace, target);
+  }
+
   const inTarget = state.hba1c <= target.upperBound;
   const needsAction = recs.some(r => r.type === 'add' || r.type === 'warn' || r.type === 'danger');
 
   if (!needsAction && target.target !== null && inTarget) {
     recs.push({
-      type: 'ok',
-      tag: 'Paciente Optimizado',
-      title: 'El tratamiento está optimizado',
-      body: `El paciente ha alcanzado su objetivo glucémico individualizado (<strong>${state.hba1c.toFixed(1)}%</strong> para una meta de <strong>${target.label}</strong>) y, de acuerdo con su perfil clínico, cuenta con las familias farmacológicas recomendadas para la protección de su condicionante predominante (${cond.name}). Se recomienda mantener el esquema y realizar un control semestral de HbA1c, FGe, albuminuria y peso.`
+      type: 'ok', tag: 'Paciente Optimizado', title: 'El tratamiento está optimizado',
+      body: `El paciente ha alcanzado su objetivo glucémico y cuenta con las familias farmacológicas recomendadas para su perfil. Mantener esquema y control semestral.`
     });
-    trace.push('Evaluación final: Paciente en objetivo con cardioprotección cubierta. Optimizado.');
-  } else if (state.hba1c > target.upperBound && target.target !== null) {
+  } else if (state.hba1c > target.upperBound && target.target !== null && recs.some(r => r.type === 'add')) {
     recs.push({
-      type: 'warn',
-      tag: 'Seguimiento',
-      title: 'Se recomienda reevaluar a los 3 meses',
-      body: `Al no alcanzar el objetivo glucémico, es vital evitar la inercia clínica. Tras instaurar este cambio terapéutico, se recomienda realizar un nuevo control de HbA1c a los 3 meses.`
+      type: 'warn', tag: 'Seguimiento', title: 'Se recomienda reevaluar a los 3 meses',
+      body: `Al no alcanzar el objetivo y tras añadir/modificar el tratamiento, se recomienda un control de HbA1c a los 3 meses para evitar inercia clínica y confirmar eficacia del nuevo fármaco.`
     });
   }
 
@@ -1128,181 +671,117 @@ function generateRecs(cond, target) {
 }
 
 function handleIC(recs, trace, target) {
+  let intensified = false;
   if (!hasClass('isglt2')) {
-    recs.push({
-      type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar un iSGLT-2',
-      body: `Independientemente del valor de la HbA1c y de la fracción de eyección, en insuficiencia cardíaca el tratamiento farmacológico de elección son los <strong>iSGLT-2 (empagliflozina, dapagliflozina o canagliflozina)</strong> dado que reducen contundentemente las hospitalizaciones por IC y la mortalidad de causa cardiovascular.`
-    });
-    trace.push('Falta primera línea para IC: iSGLT-2 prescrito por evidencia pronóstica.');
+    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar un iSGLT-2', body: `De elección por reducción de mortalidad e ingresos por IC.` });
+    intensified = true;
   }
-
   if (!state.drugs.metformina && state.fge >= 30 && state.hba1c > target.upperBound) {
-    recs.push({
-      type: 'add', tag: 'Combinar', title: 'Se recomienda asociar Metformina',
-      body: `Para optimizar el control de la glucemia por encima del objetivo, se recomienda combinar el iSGLT-2 con <strong>Metformina</strong>.`
-    });
+    recs.push({ type: 'add', tag: 'Combinar', title: 'Se recomienda asociar Metformina', body: `Para optimizar control.` });
+    intensified = true;
   }
-
   if (state.hba1c > target.upperBound && hasClass('isglt2') && !hasClass('arglp') && !hasClass('argip')) {
-    recs.push({
-      type: 'add', tag: 'Si insuficiente', title: 'Se recomienda añadir arGLP-1 o arGIP/GLP-1',
-      body: `Si el paciente mantiene mal control glucémico o persisten los síntomas a pesar del iSGLT-2, se introduce como segundo escalón el uso de <strong>arGLP-1 (ej. semaglutida, ensayo STEP-HFpEF)</strong> o <strong>arGIP/GLP-1 (tirzepatida, ensayo SUMMIT)</strong>. Estos han demostrado grandes beneficios en el control de glucemia y reducción sintomática en IC (especialmente con FE preservada y obesidad).`
-    });
-    trace.push('Escalón secundario en IC: adición de arGLP-1 / arGIP-GLP-1 por estudios recientes.');
+    recs.push({ type: 'add', tag: 'Si insuficiente', title: 'Se recomienda añadir arGLP-1 o arGIP/GLP-1', body: `Añadir incretínicos por beneficio demostrado en ensayos recientes en IC.` });
+    intensified = true;
   }
+  return intensified;
 }
 
 function handleECV(recs, trace, target) {
+  let intensified = false;
   if (!state.drugs.metformina && state.fge >= 30) {
-    recs.push({
-      type: 'add', tag: 'Añadir base', title: 'Se recomienda prescribir Metformina',
-      body: `La base del tratamiento combinado para estos pacientes debe incluir <strong>Metformina</strong> si la función renal lo permite.`
-    });
+    recs.push({ type: 'add', tag: 'Añadir base', title: 'Se recomienda prescribir Metformina', body: `Base combinada si la función renal lo permite.` });
   }
-
   const tieneCardio = hasClass('isglt2') || hasClass('arglp') || hasClass('argip');
   if (!tieneCardio) {
-    recs.push({
-      type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda terapia combinada temprana',
-      body: `En presencia de Enfermedad Cardiovascular (ECV) o Riesgo Cardiovascular Alto, el enfoque actual <strong>no depende del nivel de HbA1c</strong>, sino de la protección del daño en órgano diana. Se debe instaurar precozmente una combinación de Metformina junto con <strong>un iSGLT-2 (empagliflozina, dapagliflozina, canagliflozina)</strong>, o alternativamente un <strong>arGLP-1 (semaglutida, dulaglutida, liraglutida)</strong> o un <strong>arGIP/GLP-1 (tirzepatida)</strong>, ya que todos ellos han demostrado reducir drásticamente los eventos mayores (MACE).`
-    });
-    trace.push('Falta fármaco con beneficio cardiovascular demostrado (obligatorio independientemente de HbA1c).');
+    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda terapia combinada temprana', body: `Prescribir Metformina + (iSGLT-2 o arGLP-1 o arGIP/GLP-1) independientemente del nivel de HbA1c.` });
+    intensified = true;
   } else if (state.hba1c > target.upperBound && !(hasClass('isglt2') && (hasClass('arglp') || hasClass('argip')))) {
-    recs.push({
-      type: 'add', tag: 'Intensificar', title: 'Se recomienda sumar una segunda familia cardioprotectora',
-      body: `Dado que el paciente no alcanza la meta de HbA1c y ya cuenta con un fármaco pronóstico, se recomienda <strong>combinar simultáneamente un iSGLT-2 con un arGLP-1 o arGIP/GLP-1</strong>. Esta potente asociación maximiza el pronóstico cardiovascular y metabólico sin riesgo añadido de hipoglucemias.`
-    });
-    trace.push('HbA1c fuera de rango en paciente cardiovascular: Asociación de iSGLT-2 + arGLP-1/arGIP.');
+    recs.push({ type: 'add', tag: 'Intensificar', title: 'Se recomienda sumar una segunda familia cardioprotectora', body: `Combinar iSGLT-2 con arGLP-1/arGIP-GLP-1 para maximizar pronóstico y alcanzar objetivo.` });
+    intensified = true;
   }
+  return intensified;
 }
 
 function handleERC(recs, trace, target) {
+  let intensified = false;
   if (state.fge >= 20 && !hasClass('isglt2')) {
-    recs.push({
-      type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar iSGLT-2',
-      body: `Atendiendo al algoritmo, en pacientes con DM2 y ERC se deben priorizar grupos que han demostrado beneficio pronóstico. Se recomienda iniciar un <strong>iSGLT-2 (empagliflozina, dapagliflozina, canagliflozina)</strong> ya que reducen la progresión de la enfermedad renal y los eventos CV si el FGe es ≥ 20 ml/min. Este beneficio ocurre independientemente del control glucémico y del uso paralelo de metformina (demostrado en DAPA-CKD).`
-    });
-    trace.push('Paciente renal (FGe>=20): iSGLT-2 es la primera opción prioritaria.');
+    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar iSGLT-2', body: `Prioritario para reducir progresión renal y eventos CV.` });
+    intensified = true;
   }
-  
   if (state.hba1c > target.upperBound && !hasClass('arglp') && !hasClass('argip')) {
-    recs.push({
-      type: 'add', tag: '2ª línea', title: 'Se recomienda añadir arGLP-1',
-      body: `Como segunda línea de tratamiento, se sugiere la asociación con un <strong>arGLP-1</strong> por su sólida evidencia reduciendo el riesgo cardiovascular y la progresión del daño renal. Destaca particularmente la <strong>semaglutida</strong>, al ser el único con un estudio de objetivo primario renal (estudio FLOW), donde demostró reducir significativamente el riesgo de empeoramiento renal, con o sin metformina.`
-    });
-    trace.push('Escalón secundario renal: arGLP-1 (prioridad semaglutida basada en FLOW).');
+    recs.push({ type: 'add', tag: '2ª línea', title: 'Se recomienda añadir arGLP-1', body: `Especialmente semaglutida (estudio FLOW) para protección renal añadida.` });
+    intensified = true;
   }
+  return intensified;
 }
 
 function handleObesidad(recs, trace, target) {
+  let intensified = false;
   const tieneIncretina = hasClass('arglp') || hasClass('argip');
   if (!tieneIncretina) {
-    recs.push({
-      type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar arGLP-1 o arGIP/GLP-1',
-      body: `Al ser la obesidad el condicionante predominante, la pérdida de peso es un objetivo central a la par del glucémico. Se recomienda iniciar tratamiento, al mismo nivel jerárquico que la metformina, con potentes agonistas inyectables: <strong>arGLP-1 (semaglutida, dulaglutida)</strong> o el dual <strong>arGIP/GLP-1 (tirzepatida)</strong>, ya que consiguen reducciones de peso de entre el 10% y el 20% (estudios STEP, SURMOUNT).<br><br><em>Nota de prescripción: En España, los arGLP-1 están financiados por el SNS en tratamiento combinado exclusivamente si el IMC es ≥ 30 kg/m².</em>`
-    });
-    trace.push('Obesidad clínica: Agonistas receptores GLP-1 / duales ascienden a primera línea.');
+    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar arGLP-1 o arGIP/GLP-1', body: `Prioritario para pérdida de peso agresiva (10-20%).` });
+    intensified = true;
   }
-  
   if (state.hba1c > target.upperBound && tieneIncretina && !hasClass('isglt2')) {
-    recs.push({
-      type: 'add', tag: 'Intensificar', title: 'Se recomienda asociar un iSGLT-2',
-      body: `Si es preciso optimizar el control de la HbA1c, el siguiente paso debe ser añadir un <strong>iSGLT-2 (empagliflozina, dapagliflozina, canagliflozina)</strong> al esquema. Aunque su pérdida de peso es más modesta, su inclusión en el combo maximiza el beneficio metabólico general.`
-    });
-    trace.push('Obesidad: Intensificación mediante SGLT-2 añadida a incretina.');
+    recs.push({ type: 'add', tag: 'Intensificar', title: 'Se recomienda asociar un iSGLT-2', body: `Añadir como escalón de apoyo para control glucémico.` });
+    intensified = true;
   }
-  
-  if (state.obesidad) {
-    recs.push({
-      type: 'info', tag: 'Estilo de vida y cirugía', title: 'Abordaje integral de la obesidad',
-      body: `El tratamiento farmacológico debe complementarse siempre con una intervención estructurada sobre el estilo de vida y apoyo psicosocial. Además, si el paciente presenta un IMC ≥ 35 kg/m², las guías sugieren derivar y evaluar la posibilidad de <strong>cirugía bariátrica</strong>.`
-    });
+  if (state.imc >= 35) {
+    recs.push({ type: 'info', tag: 'Estilo de vida', title: 'Abordaje integral de la obesidad', body: `Evaluar derivación a cirugía bariátrica si IMC ≥ 35.` });
   }
+  return intensified;
 }
 
 function handleHepatica(recs, trace, target) {
+  let intensified = false;
   if (!hasClass('arglp') && !hasClass('argip')) {
-    recs.push({
-      type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda arGLP-1 o arGIP/GLP-1',
-      body: `El tratamiento farmacológico para la esteatohepatitis metabólica (MASLD/MASH) progresiva en contexto de DM2 indica el inicio de <strong>arGLP-1 (semaglutida)</strong> o <strong>arGIP/GLP-1 (tirzepatida)</strong>. Estos fármacos han demostrado reducciones muy significativas del contenido de grasa, de las enzimas hepáticas y mejoras en la fibrosis (ensayos ESSENCE y SYNERGY-NASH).`
-    });
-    trace.push('Enfermedad Hepática Metabólica: Beneficio primario por semaglutida / tirzepatida.');
+    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda arGLP-1 o arGIP/GLP-1', body: `Demostrados beneficios histológicos (reducción esteatohepatitis).` });
+    intensified = true;
   }
-  
   if (state.hba1c > target.upperBound && !hasClass('isglt2') && !state.drugs.pioglitazona) {
-    recs.push({
-      type: 'add', tag: 'Intensificar', title: 'Se recomienda añadir iSGLT-2 o Pioglitazona',
-      body: `Para la intensificación glucémica, las familias con mayor evidencia a nivel hepático son los <strong>iSGLT-2 (ej. empagliflozina, dapagliflozina)</strong> que reducen la esteatosis, o la <strong>Pioglitazona</strong>, que mejora fuertemente la sensibilidad a la insulina y la inflamación (aunque en este último hay que vigilar el aumento de peso y el riesgo de IC).`
-    });
-    trace.push('Intensificación hepática: iSGLT-2 o Pioglitazona como segunda opción.');
+    recs.push({ type: 'add', tag: 'Intensificar', title: 'Se recomienda añadir iSGLT-2 o Pioglitazona', body: `Para mejorar control y sensibilidad a la insulina.` });
+    intensified = true;
   }
+  return intensified;
 }
 
 function handleFragilidad(recs, trace, target) {
   if (hasClass('su') && state.fragGrade !== 'leve') {
-    recs.push({
-      type: 'danger', tag: 'Desintensificar', title: 'Se recomienda retirar activamente las Sulfonilureas',
-      body: `El principal criterio en el anciano frágil es la seguridad. El uso de sulfonilureas (<strong>glimepirida, gliclazida, repaglinida</strong>) supone un riesgo inaceptable de hipoglucemias severas en estos pacientes, pudiendo desencadenar caídas y declive cognitivo. Deben retirarse de la pauta.`
-    });
-    trace.push('Riesgo por fragilidad: Retirada de Sulfonilureas/Glinidas inminente.');
+    recs.push({ type: 'danger', tag: 'Desintensificar', title: 'Retirar activamente las Sulfonilureas', body: `Riesgo inaceptable de hipoglucemias. Retirar de la pauta.` });
   }
-
   if (!hasClass('idpp4') && !hasClass('arglp') && !hasClass('argip') && state.fragGrade !== 'muyGrave') {
-    recs.push({
-      type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda el uso de iDPP-4',
-      body: `En el contexto de fragilidad, los <strong>inhibidores de la DPP-4 (linagliptina, sitagliptina, vildagliptina, saxagliptina)</strong> destacan como la primera línea de tratamiento. Aportan excelente tolerabilidad, facilidad de toma y prácticamente nulo riesgo de hipoglucemia. (Recordar que linagliptina no requiere ajuste por filtrado glomerular).`
-    });
-    trace.push('Tratamiento conservador en fragilidad: iDPP-4 preferido por seguridad.');
+    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda el uso de iDPP-4', body: `Primera línea por tolerabilidad y nulo riesgo de hipoglucemia.` });
   }
-
   if (state.fragGrade === 'muyGrave') {
-    recs.push({
-      type: 'warn', tag: 'Final de vida', title: 'Se recomienda desintensificación estructurada',
-      body: `Al tratarse de un paciente con fragilidad muy grave o esperanza de vida limitada, se deben suspender todos los tratamientos orientados a prevenir complicaciones a largo plazo. Mantener solo regímenes farmacológicos simples orientados a que el paciente no orine en exceso, no pierda peso y no sufra hipoglucemias.`
-    });
-    trace.push('Cuidados paliativos metabólicos aplicados. Desintensificación amplia.');
+    recs.push({ type: 'warn', tag: 'Final de vida', title: 'Se recomienda desintensificación estructurada', body: `Suspender tratamientos a largo plazo. Mantener regímenes simples.` });
   }
+  return true; 
 }
 
-function handleByHbA1c(recs, trace, target) {
-  if (!state.drugs.metformina && state.fge >= 30) {
-    recs.push({
-      type: 'add', tag: 'Añadir base', title: 'Se recomienda iniciar tratamiento con Metformina',
-      body: `Al no presentar otros condicionantes clínicos específicos (ausencia de IC, ECV, ERC, obesidad, etc.), la estrategia estándar inicia indicando la prescripción de <strong>Metformina</strong> como base universal, titulada progresivamente para tolerabilidad gástrica.`
-    });
-    trace.push('Escenario libre de complicaciones mayores: Metformina es la base universal.');
-  }
+// LÓGICA DE INTENSIFICACIÓN CIRCULAR (CORREGIDA)
+function applyGeneralIntensification(recs, trace, target) {
+  const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'].filter(c => hasClass(c)).length;
 
-  if (state.hba1c >= 8.5 && !state.sintomatico) {
-    const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'].filter(c => hasClass(c)).length;
-    
+  if (state.hba1c >= 8.5) {
     if (clasesUsadas <= 1) {
-      recs.push({
-        type: 'add', tag: 'Intensificación inmediata', title: 'Se recomienda doble terapia inicial (Metformina + segundo ADNI)',
-        body: `Ante una HbA1c ≥ 8,5 % en un paciente asintomático, la guía insta a romper la inercia clínica evitando la terapia escalonada convencional. Se recomienda arrancar directamente combinando la Metformina con un segundo fármaco potente, preferiblemente <strong>un iSGLT-2, un arGLP-1 o un arGIP/GLP-1</strong>. La insulina queda reservada solo si hubiera clínica cardinal.`
-      });
-      trace.push('HbA1c >= 8.5%: Estrategia agresiva (doble terapia) para evitar inercia.');
+      recs.push({ type: 'add', tag: 'Intensificación inmediata', title: 'Se recomienda instaurar Doble Terapia', body: `Al presentar HbA1c ≥ 8,5 %, las guías dictan romper la inercia clínica e iniciar tratamiento añadiendo directamente un segundo fármaco potente (iSGLT-2 o arGLP-1/arGIP-GLP-1) a la base.` });
+      trace.push(`Intensificación: HbA1c ≥ 8.5, salto a doble terapia.`);
+    } else if (clasesUsadas === 2) {
+      recs.push({ type: 'add', tag: 'Triple terapia', title: 'Se recomienda progresar a Triple Terapia', body: `La doble terapia es insuficiente ante una HbA1c ≥ 8,5 %. Se recomienda añadir un tercer ADNI que complemente la fisiopatología, valorando el perfil del paciente (riesgo hipoglucemia, comorbilidades).` });
+      trace.push(`Intensificación: HbA1c ≥ 8.5, salto a triple terapia.`);
     } else {
-      recs.push({
-        type: 'add', tag: 'Triple terapia', title: 'Se recomienda añadir un tercer fármaco o insulina',
-        body: `Como el paciente se encuentra muy fuera de objetivo (≥ 8.5%) y ya toma una combinación de fármacos orales, se debe intensificar de manera contundente añadiendo <strong>un tercer ADNI (iSGLT-2, arGLP-1, Pioglitazona, etc.)</strong> que aporte un mecanismo complementario, o bien valorar el paso a <strong>insulina basal</strong>.`
-      });
-      trace.push('Triple terapia sugerida por descompensación refractaria.');
+      recs.push({ type: 'add', tag: 'Intensificar', title: 'Se recomienda valorar un 4º ADNI o paso a Insulina Basal', body: `El paciente presenta un control muy deficiente (${state.hba1c.toFixed(1)} %) a pesar de tomar ${clasesUsadas} fármacos. El algoritmo permite intentar el rescate <strong>añadiendo un 4º ADNI</strong> (ej. Pioglitazona o SU, si no hay contraindicaciones y se quiere evitar inyectables), pero si la distancia al objetivo es enorme o se sospecha fracaso de célula beta, <strong>la Insulinización Basal es mandatoria y más eficaz.</strong>` });
+      trace.push(`Fracaso a 3+ fármacos: Se habilita opción de 4º ADNI o Insulina Basal según preferencia y reserva pancreática.`);
     }
-  } else if (state.hba1c < 8.5 && state.hba1c > target.upperBound) {
-    const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'].filter(c => hasClass(c)).length;
-    
+  } else if (state.hba1c > target.upperBound) {
     if (clasesUsadas <= 1) {
-      recs.push({
-        type: 'add', tag: 'Doble terapia', title: 'Se recomienda asociar iSGLT-2, arGLP-1 o arGIP/GLP-1',
-        body: `Para alcanzar el objetivo glucémico, el algoritmo promueve una intensificación temprana. Se recomienda añadir a la Metformina una molécula que aporte beneficios extra (pérdida de peso, sin hipoglucemia, protección cardiovascular incipiente), optando por <strong>iSGLT-2 (empagliflozina, dapagliflozina)</strong> o <strong>análogos inyectables (semaglutida, tirzepatida)</strong> antes de recurrir a alternativas más clásicas.`
-      });
-      trace.push('HbA1c < 8.5% pero fuera de objetivo: Intensificación temprana priorizando familias protectoras.');
+      recs.push({ type: 'add', tag: 'Doble terapia', title: 'Se recomienda asociar un segundo fármaco', body: `Para alcanzar el objetivo, se recomienda asociar un segundo fármaco (priorizar iSGLT-2 o arGLP-1).` });
+    } else if (clasesUsadas === 2) {
+      recs.push({ type: 'add', tag: 'Triple terapia', title: 'Se recomienda instaurar Triple Terapia', body: `No se alcanza el objetivo con doble terapia. Está indicado añadir una tercera familia farmacológica oral o inyectable (ADNI), vigilando interacciones.` });
     } else {
-      recs.push({
-        type: 'add', tag: 'Intensificar', title: 'Se recomienda progresar a triple terapia o Insulina',
-        body: `Si el objetivo de HbA1c sigue escapándose a pesar de la doble terapia, se recomienda sumar una nueva familia terapéutica oral (respetando la incompatibilidad entre iDPP-4 y arGLP-1) o dar el salto hacia una pauta de <strong>Insulina Basal (glargina, degludec, detemir)</strong>.`
-      });
+      recs.push({ type: 'add', tag: 'Intensificar', title: 'Se recomienda añadir un 4º ADNI o iniciar Insulina Basal', body: `Al no conseguir llevar al paciente a objetivo tras emplear combinaciones de ${clasesUsadas} fármacos, el algoritmo indica moverse al centro del esquema: se puede intentar <strong>añadir un cuarto fármaco oral/incretina (4º ADNI)</strong> siempre que sea clínica y farmacológicamente compatible, o bien dar el paso directamente a <strong>Insulinización Basal</strong>.` });
+      trace.push(`Intensificación progresiva: Fracaso a 3 fármacos -> Ofrecer 4º ADNI o Insulina.`);
     }
   }
 }
@@ -1310,23 +789,16 @@ function handleByHbA1c(recs, trace, target) {
 /* =================================================================
    RENDER Y CONTROL DE INTERFAZ
    ================================================================= */
-
 function renderCurrentDrugs() {
   const el = document.getElementById('currentDrugs');
   const active = Object.entries(state.drugs).filter(([k,v]) => v).map(([k]) => k);
-  if (active.length === 0) {
-    el.innerHTML = '<span style="color:var(--ink-mute); font-style:italic; font-size:13px;">Ninguno seleccionado</span>';
-    return;
-  }
+  if (active.length === 0) { el.innerHTML = '<span style="color:var(--ink-mute); font-style:italic; font-size:13px;">Ninguno seleccionado</span>'; return; }
   el.innerHTML = active.map(d => `<span class="drug-pill current">${DRUG_LABELS[d]}</span>`).join('');
 }
 
 function renderRecs(recs) {
   const el = document.getElementById('recommendations');
-  if (recs.length === 0) {
-    el.innerHTML = '<div class="empty-state">No se pudieron generar recomendaciones. Compruebe los datos introducidos.</div>';
-    return;
-  }
+  if (recs.length === 0) { el.innerHTML = '<div class="empty-state">No se pudieron generar recomendaciones.</div>'; return; }
   el.innerHTML = recs.map(r => `
     <div class="rec-card ${r.type}">
       <div class="rec-card-tag">${r.tag}</div>
@@ -1360,17 +832,11 @@ function update() {
   state.fragGrade = fragRadio ? fragRadio.value : 'leve';
 
   state.drugs = {};
-  document.querySelectorAll('[data-drug]').forEach(cb => {
-    state.drugs[cb.dataset.drug] = cb.checked;
-  });
+  document.querySelectorAll('[data-drug]').forEach(cb => { state.drugs[cb.dataset.drug] = cb.checked; });
 
   if (state.deterioro) {
-      state.fragilidad = true;
-      document.getElementById('fragilidad').checked = true;
-      if (state.fragGrade === 'leve') {
-          state.fragGrade = 'moderada';
-          document.querySelector('input[name="fragGrade"][value="moderada"]').checked = true;
-      }
+      state.fragilidad = true; document.getElementById('fragilidad').checked = true;
+      if (state.fragGrade === 'leve') { state.fragGrade = 'moderada'; document.querySelector('input[name="fragGrade"][value="moderada"]').checked = true; }
   }
 
   document.getElementById('hbValue').textContent = state.hba1c.toFixed(1);
@@ -1378,58 +844,30 @@ function update() {
   document.getElementById('gme').textContent = gme;
 
   document.getElementById('fragilidadGrade').classList.toggle('active', state.fragilidad);
-
-  document.querySelectorAll('.check').forEach(c => {
-    const id = c.dataset.check;
-    if (id) c.classList.toggle('checked', state[id] === true);
-  });
-
-  document.querySelectorAll('.radio-pill').forEach(p => {
-    const input = p.querySelector('input');
-    p.classList.toggle('selected', input.checked);
-  });
-
-  document.querySelectorAll('.drug-class').forEach(dc => {
-    const cls = dc.dataset.drugclass;
-    dc.classList.toggle('has-active', hasClass(cls));
-  });
+  document.querySelectorAll('.check').forEach(c => { const id = c.dataset.check; if (id) c.classList.toggle('checked', state[id] === true); });
+  document.querySelectorAll('.radio-pill').forEach(p => { const input = p.querySelector('input'); p.classList.toggle('selected', input.checked); });
+  document.querySelectorAll('.drug-class').forEach(dc => { const cls = dc.dataset.drugclass; dc.classList.toggle('has-active', hasClass(cls)); });
 
   const cond = getConditioner();
   const target = getTarget();
   const { recs, trace } = generateRecs(cond, target);
 
   const tv = document.getElementById('targetValue');
-  if (target.target === null) {
-    tv.textContent = 'Sin objetivo';
-    tv.classList.add('muted');
-  } else {
-    tv.textContent = target.label;
-    tv.classList.remove('muted');
-  }
+  if (target.target === null) { tv.textContent = 'Sin objetivo'; tv.classList.add('muted'); } 
+  else { tv.textContent = target.label; tv.classList.remove('muted'); }
 
   document.getElementById('targetRationale').textContent = target.rationale;
 
   const status = document.getElementById('targetStatus');
-  if (target.target === null) {
-    status.className = 'target-status warn';
-    status.textContent = 'Sin objetivo numérico';
-  } else if (state.hba1c <= target.upperBound) {
-    status.className = 'target-status ok';
-    status.textContent = 'En objetivo · HbA1c ' + state.hba1c.toFixed(1) + ' %';
-  } else if (state.hba1c <= target.upperBound + 0.2) {
-    status.className = 'target-status warn';
-    status.textContent = 'Al límite o levemente sobre el objetivo · HbA1c ' + state.hba1c.toFixed(1) + ' %';
-  } else {
-    status.className = 'target-status no';
-    status.textContent = 'Lejos del objetivo · HbA1c ' + state.hba1c.toFixed(1) + ' %';
-  }
+  if (target.target === null) { status.className = 'target-status warn'; status.textContent = 'Sin objetivo numérico'; } 
+  else if (state.hba1c <= target.upperBound) { status.className = 'target-status ok'; status.textContent = 'En objetivo · HbA1c ' + state.hba1c.toFixed(1) + ' %'; } 
+  else if (state.hba1c <= target.upperBound + 0.2) { status.className = 'target-status warn'; status.textContent = 'Al límite o levemente sobre el objetivo · HbA1c ' + state.hba1c.toFixed(1) + ' %'; } 
+  else { status.className = 'target-status no'; status.textContent = 'Lejos del objetivo · HbA1c ' + state.hba1c.toFixed(1) + ' %'; }
 
   document.getElementById('conditionerName').textContent = cond.name;
   document.getElementById('conditionerMeta').textContent = cond.meta;
 
-  renderCurrentDrugs();
-  renderRecs(recs);
-  renderTrace(trace);
+  renderCurrentDrugs(); renderRecs(recs); renderTrace(trace);
 }
 
 function resetAll() {
@@ -1443,11 +881,7 @@ function resetAll() {
   update();
 }
 
-document.querySelectorAll('input, select').forEach(el => {
-  el.addEventListener('input', update);
-  el.addEventListener('change', update);
-});
-
+document.querySelectorAll('input, select').forEach(el => { el.addEventListener('input', update); el.addEventListener('change', update); });
 update();
 </script>
 
