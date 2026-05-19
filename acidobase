@@ -921,7 +921,7 @@
 
 <script>
 /* =================================================================
-   Algoritmo redGDPS 2026 - lógica clínica corregida
+   Algoritmo redGDPS 2026 - lógica clínica corregida (Objetivos)
    ================================================================= */
 
 const state = {
@@ -985,10 +985,6 @@ function drugsInClass(cls) {
   return Object.entries(state.drugs).filter(([k,v]) => v && DRUG_CLASS[k] === cls).map(([k]) => k);
 }
 
-/* ---------- Determinación de condicionante predominante ----------
-   Prioridad de izquierda a derecha según el algoritmo:
-   IC > ECV/RCV > ERC > Obesidad > Hepática > Fragilidad
------------------------------------------------------------------- */
 function getConditioner() {
   if (state.ic) return { id: 'ic', name: 'Insuficiencia cardíaca', meta: 'iSGLT-2 (con o sin Met) → arGLP-1 / arGIP-GLP-1' };
   if (state.ecv || state.rcvAlto) {
@@ -1004,19 +1000,21 @@ function getConditioner() {
   return { id: null, name: 'Ninguno', meta: 'Algoritmo guiado por HbA1c y clínica cardinal' };
 }
 
-/* ---------- Objetivo HbA1c personalizado (Corregido a Guía 2026) ---------- */
+/* ---------- Objetivo HbA1c personalizado (Actualizado con lógica <6.5%) ---------- */
 function getTarget() {
   const sinComplicaciones = !state.ic && !state.ecv && !state.erc && !state.hepatica && !state.rcvAlto;
 
+  // 1. Fragilidad extrema o vida limitada
   if (state.fragilidad && state.fragGrade === 'muyGrave') {
     return { 
       target: null, 
       label: 'Evitar síntomas', 
-      rationale: 'Fragilidad muy grave / esperanza de vida limitada. No hay objetivo numérico, priorizar evitar síntomas de hipoglucemia o hiperglucemia.', 
+      rationale: 'Fragilidad muy grave o esperanza de vida limitada. No hay objetivo numérico; se debe dar prioridad a la calidad de vida y evitar síntomas.', 
       upperBound: 9.0
     };
   }
-  // Deterioro cognitivo o limitación funcional determina fragilidad moderada-grave
+  
+  // 2. Fragilidad moderada-grave o deterioro cognitivo/funcional
   if (state.deterioro || (state.fragilidad && (state.fragGrade === 'grave' || state.fragGrade === 'moderada'))) {
     return { 
       target: 8.5, 
@@ -1025,26 +1023,32 @@ function getTarget() {
       upperBound: 8.5
     };
   }
-  if (state.dxReciente && !state.fragilidad && sinComplicaciones) {
+  
+  // 3. Objetivo estricto < 6.5% (Diagnóstico reciente o paciente joven/menos de 10 años evolución sin fragilidad/complicaciones)
+  if (!state.fragilidad && sinComplicaciones && (state.dxReciente || (state.tiempoDx <= 10 && state.edad <= 75))) {
     return { 
       target: 6.5, 
       label: '< 6,5 %', 
-      rationale: 'Reciente diagnóstico sin fragilidad ni complicaciones: Alcanzar objetivo estricto durante el primer año y mantener si no hay hipoglucemias.',
+      rationale: 'Paciente joven, de diagnóstico reciente o con evolución ≤ 10 años sin complicaciones ni fragilidad: alcanzar y mantener < 6,5 % si no hay hipoglucemias.',
       upperBound: 6.5
     };
   }
+  
+  // 4. Objetivo < 7.0% o ≤ 7.0% (Larga evolución o >75 años sin complicaciones)
   if (!state.fragilidad && sinComplicaciones && (state.tiempoDx > 10 || state.edad > 75)) {
     return { 
       target: 7.0, 
       label: '≤ 7,0 %', 
-      rationale: 'Larga evolución (>10 años) o edad >75 años, sin complicaciones asociadas.',
+      rationale: 'Paciente de larga evolución (>10 años) o edad > 75 años, sin complicaciones asociadas.',
       upperBound: 7.0
     };
   }
+  
+  // 5. Objetivo general (Ej. tiene complicaciones pero no es frágil)
   return { 
     target: 7.0, 
     label: '< 7,0 %', 
-    rationale: 'Objetivo de HbA1c general individualizado.',
+    rationale: 'Objetivo individualizado general (presencia de comorbilidades sin fragilidad).',
     upperBound: 7.0
   };
 }
@@ -1059,7 +1063,6 @@ function generateRecs(cond, target) {
 
   /* ===== Alertas de seguridad transversales ===== */
 
-  // Metformina y filtrado glomerular
   if (state.drugs.metformina) {
     if (state.fge < 30) {
       recs.push({
@@ -1092,7 +1095,6 @@ function generateRecs(cond, target) {
     trace.push('iDPP-4 + arGLP-1/arGIP: incompatible → retirar iDPP-4');
   }
 
-  // Síntomas cardinales + HbA1c >= 8.5% -> insulina
   if (state.sintomatico && state.hba1c >= 8.5) {
     recs.push({
       type: 'warn', tag: 'Clínica cardinal', title: 'Insulina + Metformina',
@@ -1106,7 +1108,6 @@ function generateRecs(cond, target) {
     });
   }
 
-  /* ===== Lógica por condicionante (prevalece sobre HbA1c) ===== */
   if (cond.id === 'ic') { handleIC(recs, trace); }
   else if (cond.id === 'ecv') { handleECV(recs, trace); }
   else if (cond.id === 'erc') { handleERC(recs, trace); }
@@ -1115,7 +1116,6 @@ function generateRecs(cond, target) {
   else if (cond.id === 'fragilidad') { handleFragilidad(recs, trace); }
   else { handleByHbA1c(recs, trace, target); }
 
-  /* ===== Recomendaciones de seguimiento (Corregido) ===== */
   if (state.hba1c > target.upperBound && target.target !== null) {
     recs.push({
       type: 'warn',
@@ -1135,7 +1135,6 @@ function generateRecs(cond, target) {
   return { recs, trace };
 }
 
-/* ---------- Handlers específicos por condicionante ---------- */
 function handleIC(recs, trace) {
   if (!hasClass('isglt2')) {
     recs.push({
@@ -1427,9 +1426,9 @@ function update() {
   } else if (state.hba1c <= target.upperBound) {
     status.className = 'target-status ok';
     status.textContent = 'En objetivo · HbA1c ' + state.hba1c.toFixed(1) + ' %';
-  } else if (state.hba1c <= target.upperBound + 1) {
+  } else if (state.hba1c <= target.upperBound + 0.2) {
     status.className = 'target-status warn';
-    status.textContent = 'Sobre objetivo · HbA1c ' + state.hba1c.toFixed(1) + ' %';
+    status.textContent = 'Al límite o levemente sobre el objetivo · HbA1c ' + state.hba1c.toFixed(1) + ' %';
   } else {
     status.className = 'target-status no';
     status.textContent = 'Lejos del objetivo · HbA1c ' + state.hba1c.toFixed(1) + ' %';
