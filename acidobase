@@ -392,11 +392,9 @@
       </div>
 
       <div class="sub-field" id="fragilidadGrade">
-        <label>Grado de fragilidad</label>
+        <label>Grado de fragilidad (Solo según algoritmo 2026)</label>
         <div class="radio-group" id="fragilidadOpts">
-          <label class="radio-pill"><input type="radio" name="fragGrade" value="leve" checked> Leve</label>
-          <label class="radio-pill"><input type="radio" name="fragGrade" value="moderada"> Moderada</label>
-          <label class="radio-pill"><input type="radio" name="fragGrade" value="grave"> Grave</label>
+          <label class="radio-pill"><input type="radio" name="fragGrade" value="moderadaGrave" checked> Moderada - Grave</label>
           <label class="radio-pill"><input type="radio" name="fragGrade" value="muyGrave"> Muy grave / vida limitada</label>
         </div>
       </div>
@@ -539,7 +537,7 @@
 const state = {
   hba1c: 7.5, edad: 65, tiempoDx: 5, fge: 80,
   sintomatico: false, dxReciente: false, ic: false, ecv: false, rcvAlto: false,
-  erc: false, obesidad: false, hepatica: false, fragilidad: false, fragGrade: 'leve', deterioro: false,
+  erc: false, obesidad: false, hepatica: false, fragilidad: false, fragGrade: 'moderadaGrave', deterioro: false,
   drugs: {}
 };
 
@@ -573,16 +571,27 @@ function getConditioner() {
   if (state.erc) return { id: 'erc', name: 'Enfermedad renal crónica', meta: 'iSGLT-2 (si FGe ≥20) → arGLP-1 (preferible semaglutida)' };
   if (state.obesidad) return { id: 'obesidad', name: 'Obesidad', meta: 'arGIP-GLP-1 o arGLP-1 + Met → iSGLT-2' };
   if (state.hepatica) return { id: 'hepatica', name: 'Enfermedad hepática metabólica', meta: 'arGIP-GLP-1 o arGLP-1 → iSGLT-2 o Pioglitazona' };
-  if (state.fragilidad) return { id: 'fragilidad', name: 'Fragilidad · ' + state.fragGrade, meta: 'iDPP-4 → +Met → insulina + Met (evitar Sulfonilureas)' };
+  if (state.fragilidad) {
+    const nameFrag = state.fragGrade === 'muyGrave' ? 'Muy grave / Vida limitada' : 'Moderada - Grave';
+    return { id: 'fragilidad', name: 'Fragilidad: ' + nameFrag, meta: 'iDPP-4 → +Met → insulina + Met (evitar Sulfonilureas)' };
+  }
   return { id: null, name: 'Ninguno', meta: 'Algoritmo guiado por HbA1c y clínica cardinal' };
 }
 
 function getTarget() {
   const sinComplicaciones = !state.ic && !state.ecv && !state.erc && !state.hepatica && !state.rcvAlto;
-  if (state.fragilidad && state.fragGrade === 'muyGrave') return { target: null, label: 'Evitar síntomas', rationale: 'Fragilidad muy grave o esperanza de vida limitada. No hay objetivo numérico; se prioriza evitar síntomas hiper/hipoglucémicos.', upperBound: 9.0 };
-  if (state.deterioro || (state.fragilidad && (state.fragGrade === 'grave' || state.fragGrade === 'moderada'))) return { target: 8.5, label: '7,5 - 8,5 %', rationale: 'Fragilidad moderada-grave (deterioro cognitivo/funcional). Especial precaución ante hipoglucemias.', upperBound: 8.5 };
-  if (!state.fragilidad && sinComplicaciones && (state.dxReciente || (state.tiempoDx <= 10 && state.edad <= 75))) return { target: 6.5, label: '< 6,5 %', rationale: 'Paciente joven o <10 años de evolución sin complicaciones: objetivo estricto (memoria metabólica).', upperBound: 6.5 };
-  if (!state.fragilidad && sinComplicaciones && (state.tiempoDx > 10 || state.edad > 75)) return { target: 7.0, label: '≤ 7,0 %', rationale: 'Paciente de larga evolución o > 75 años sin complicaciones.', upperBound: 7.0 };
+  if (state.fragilidad && state.fragGrade === 'muyGrave') {
+    return { target: null, label: 'Evitar síntomas', rationale: 'Fragilidad muy grave o esperanza de vida limitada. No hay objetivo numérico; se prioriza evitar síntomas hiper/hipoglucémicos.', upperBound: 9.0 };
+  }
+  if (state.deterioro || (state.fragilidad && state.fragGrade === 'moderadaGrave')) {
+    return { target: 8.5, label: '7,5 - 8,5 %', rationale: 'Fragilidad moderada-grave (deterioro cognitivo/funcional). Especial precaución ante hipoglucemias.', upperBound: 8.5 };
+  }
+  if (!state.fragilidad && sinComplicaciones && (state.dxReciente || (state.tiempoDx <= 10 && state.edad <= 75))) {
+    return { target: 6.5, label: '< 6,5 %', rationale: 'Paciente joven o <10 años de evolución sin complicaciones: objetivo estricto (memoria metabólica).', upperBound: 6.5 };
+  }
+  if (!state.fragilidad && sinComplicaciones && (state.tiempoDx > 10 || state.edad > 75)) {
+    return { target: 7.0, label: '≤ 7,0 %', rationale: 'Paciente de larga evolución o > 75 años sin complicaciones.', upperBound: 7.0 };
+  }
   return { target: 7.0, label: '< 7,0 %', rationale: 'Objetivo individualizado general por presencia de comorbilidad establecida.', upperBound: 7.0 };
 }
 
@@ -649,8 +658,8 @@ function detectIncompatibilities(recs, trace) {
     incomp = true;
   }
 
-  if (hasClass('su') && state.fragilidad && state.fragGrade !== 'leve') {
-    recs.push({ type: 'danger', tag: 'Riesgo Geriátrico', title: 'Se recomienda retirar las Sulfonilureas / Glinidas', body: `En pacientes con fragilidad moderada/grave o deterioro, los secretagogos (<strong>glimepirida, gliclazida, repaglinida</strong>) están fuertemente desaconsejados por provocar hipoglucemias severas que derivan en caídas y daño neurológico. <strong>Sugerencia:</strong> Sustituir por familias con extrema seguridad frente a bajadas de azúcar, como los <strong>iDPP-4</strong>.` });
+  if (hasClass('su') && state.fragilidad) {
+    recs.push({ type: 'danger', tag: 'Riesgo Geriátrico', title: 'Se recomienda retirar las Sulfonilureas / Glinidas', body: `En pacientes con fragilidad o deterioro, los secretagogos (<strong>glimepirida, gliclazida, repaglinida</strong>) están fuertemente desaconsejados por provocar hipoglucemias severas que derivan en caídas y daño neurológico. <strong>Sugerencia:</strong> Sustituir por familias con extrema seguridad frente a bajadas de azúcar, como los <strong>iDPP-4</strong>.` });
     trace.push('Fragilidad + SU: Incompatibilidad por riesgo de hipoglucemia severa.');
     incomp = true;
   }
@@ -886,14 +895,14 @@ function update() {
   state.deterioro = document.getElementById('deterioro').checked;
 
   const fragRadio = document.querySelector('input[name="fragGrade"]:checked');
-  state.fragGrade = fragRadio ? fragRadio.value : 'leve';
+  state.fragGrade = fragRadio ? fragRadio.value : 'moderadaGrave';
 
   state.drugs = {};
   document.querySelectorAll('[data-drug]').forEach(cb => { state.drugs[cb.dataset.drug] = cb.checked; });
 
   if (state.deterioro) {
       state.fragilidad = true; document.getElementById('fragilidad').checked = true;
-      if (state.fragGrade === 'leve') { state.fragGrade = 'moderada'; document.querySelector('input[name="fragGrade"][value="moderada"]').checked = true; }
+      state.fragGrade = 'moderadaGrave'; document.querySelector('input[name="fragGrade"][value="moderadaGrave"]').checked = true; 
   }
 
   document.getElementById('hbValue').textContent = state.hba1c.toFixed(1);
@@ -933,8 +942,8 @@ function resetAll() {
   document.getElementById('tiempoDx').value = 5;
   document.getElementById('fge').value = 80;
   document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
-  const fragLeve = document.querySelector('input[name="fragGrade"][value="leve"]');
-  if (fragLeve) fragLeve.checked = true;
+  const fragModGrave = document.querySelector('input[name="fragGrade"][value="moderadaGrave"]');
+  if (fragModGrave) fragModGrave.checked = true;
   update();
 }
 
