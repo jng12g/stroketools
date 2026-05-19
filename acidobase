@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analizador de Equilibrio Ácido-Base</title>
+    <style>
+        :root {
+            --primary-color: #2b6cb0;
+            --primary-hover: #2c5282;
+            --bg-color: #f7fafc;
+            --card-bg: #ffffff;
+            --text-color: #2d3748;
+            --border-color: #e2e8f0;
+            --success-color: #48bb78;
+            --danger-color: #f56565;
+            --warning-color: #ecc94b;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        header p {
+            color: #718096;
+            margin-top: 0;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #4a5568;
+        }
+
+        .form-group input {
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .help-text {
+            font-size: 12px;
+            color: #718096;
+            margin-top: 4px;
+        }
+
+        button {
+            width: 100%;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .result-box {
+            display: none;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 20px;
+            border-left: 5px solid transparent;
+        }
+
+        .result-box.active {
+            display: block;
+        }
+
+        .normal { background-color: #f0fff4; border-color: var(--success-color); border-left-color: var(--success-color); }
+        .alterado { background-color: #fffaf0; border-color: var(--warning-color); border-left-color: var(--warning-color); }
+        .critico { background-color: #fff5f5; border-color: var(--danger-color); border-left-color: var(--danger-color); }
+
+        .result-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+
+        .result-details {
+            margin: 0;
+            font-size: 15px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 12px;
+            color: #a0aec0;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Analizador de Equilibrio Ácido-Base</h1>
+        <p>Herramienta clínica basada en el enfoque de Siggaard-Andersen (SBE)</p>
+    </header>
+
+    <div class="card">
+        <div class="grid">
+            <div class="form-group">
+                <label for="ph">pH</label>
+                <input type="number" id="ph" step="0.01" min="6.00" max="8.00" placeholder="Ej: 7.42">
+                <span class="help-text">Normal: 7.35 - 7.45</span>
+            </div>
+            <div class="form-group">
+                <label for="paco2">PaCO₂ (mmHg)</label>
+                <input type="number" id="paco2" step="0.1" min="10" max="150" placeholder="Ej: 19.5">
+                <span class="help-text">Normal: 35 - 45 mmHg</span>
+            </div>
+            <div class="form-group">
+                <label for="sbe">SBE (mmol/L)</label>
+                <input type="number" id="sbe" step="0.1" min="-50" max="50" placeholder="Ej: -10.4">
+                <span class="help-text">Normal: -3 a +3 mmol/L</span>
+            </div>
+        </div>
+        <button onclick="calcularTrastorno()">Analizar Gasometría</button>
+
+        <div id="result" class="result-box">
+            <p id="resultTitle" class="result-title"></p>
+            <p id="resultDetails" class="result-details"></p>
+        </div>
+    </div>
+
+    <footer>
+        Algoritmo clínico adaptado de: Aristizábal-Salazar RE, et al. Equilibrio ácido-base: el mejor enfoque clínico. Rev Colomb Anestesiol. 2015;43(3):219-224.
+    </footer>
+</div>
+
+<script>
+    function calcularTrastorno() {
+        const ph = parseFloat(document.getElementById('ph').value);
+        const paco2 = parseFloat(document.getElementById('paco2').value);
+        const sbe = parseFloat(document.getElementById('sbe').value);
+
+        const resultDiv = document.getElementById('result');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultDetails = document.getElementById('resultDetails');
+
+        // Validación de entradas
+        if (isNaN(ph) || isNaN(paco2) || isNaN(sbe)) {
+            alert("Por favor, introduzca valores numéricos válidos en todos los campos.");
+            return;
+        }
+
+        let diagnostico = "";
+        let tipoAlerta = "alterado"; // normal, alterado, critico
+        let explicacion = "";
+
+        // Clasificación basada estrictamente en el algoritmo del documento
+        if (ph < 7.35) {
+            // ACIDOSIS
+            tipoAlerta = "critico";
+            if (paco2 > 45) {
+                if (sbe < -3) {
+                    diagnostico = "Acidosis Mixta";
+                    explicacion = "Coexisten componentes patológicos tanto respiratorios como metabólicos que deprimen el pH de forma simultánea.";
+                } else if (sbe > 3) {
+                    diagnostico = "Acidosis Respiratoria con Compensación Parcial";
+                    explicacion = "El sistema respiratorio es la causa primaria de la acidosis, y el riñón ha comenzado a retener base para intentar compensar el pH, pero aún no es suficiente.";
+                } else {
+                    diagnostico = "Acidosis Respiratoria Aguda (No compensada)";
+                    explicacion = "El origen es un fallo en la ventilación alveolar. No se evidencia respuesta compensatoria metabólica en el SBE.";
+                }
+            } else if (sbe < -3) {
+                if (paco2 < 35) {
+                    diagnostico = "Acidosis Metabólica con Compensación Parcial";
+                    explicacion = "El déficit primario de bases genera la acidosis, provocando una respuesta respiratoria secundaria (hiperventilación) para disminuir la PaCO₂, sin lograr normalizar el pH.";
+                } else {
+                    diagnostico = "Acidosis Metabólica Aguda (No compensada)";
+                    explicacion = "Pérdida de bases o ganancia de ácidos fijos. El sistema respiratorio aún no muestra una respuesta compensatoria adaptativa.";
+                }
+            } else {
+                diagnostico = "Acidosis no clasificada";
+                explicacion = "Verifique la concordancia de los datos o evalúe variaciones agudas.";
+            }
+
+        } else if (ph > 7.45) {
+            // ALCALOSIS
+            tipoAlerta = "critico";
+            if (paco2 < 35) {
+                if (sbe > 3) {
+                    diagnostico = "Alcalosis Mixta";
+                    explicacion = "Existe un aumento simultáneo del pH secundario tanto a hiperventilación alveolar como a un exceso de bases metabólicas.";
+                } else if (sbe < -3) {
+                    diagnostico = "Alcalosis Respiratoria con Compensación Parcial";
+                    explicacion = "La causa primaria es la hiperventilación. El riñón responde excretando bicarbonato (SBE negativo) para mitigar el aumento del pH.";
+                } else {
+                    diagnostico = "Alcalosis Respiratoria Aguda (No compensada)";
+                    explicacion = "Pérdida primaria de CO₂ por hiperventilación sin respuesta metabólica secundaria.";
+                }
+            } else if (sbe > 3) {
+                if (paco2 > 45) {
+                    diagnostico = "Alcalosis Metabólica con Compensación Parcial";
+                    explicacion = "El exceso primario de base eleva el pH. El organismo responde reteniendo CO₂ (hipoventilación compensatoria), sin normalizar por completo el pH.";
+                } else {
+                    diagnostico = "Alcalosis Metabólica Aguda (No compensada)";
+                    explicacion = "Exceso primario de bases sin evidencia de compensación respiratoria secundaria.";
+                }
+            } else {
+                diagnostico = "Alcalosis no clasificada";
+                explicacion = "Verifique la consistencia interna de la muestra o factores externos.";
+            }
+
+        } else {
+            // pH DENTRO DEL RANGO DE REFERENCIA (7.35 - 7.45)
+            if (paco2 >= 35 && paco2 <= 45 && sbe >= -3 && sbe <= 3) {
+                diagnostico = "Sin Trastorno del Equilibrio Ácido-Base";
+                tipoAlerta = "normal";
+                explicacion = "Todos los parámetros analizados se encuentran dentro de los rangos fisiológicos estándar de referencia.";
+            } else if (sbe < -3 && paco2 < 35) {
+                diagnostico = "Acidosis Metabólica Totalmente Compensada";
+                tipoAlerta = "alterado";
+                explicacion = "Un cuadro metabólico de base que ha sido neutralizado por una respuesta respiratoria máxima, logrando retornar el pH al rango normal.";
+            } else if (sbe > 3 && paco2 > 45) {
+                diagnostico = "Alcalosis Metabólica Totalmente Compensada";
+                tipoAlerta = "alterado";
+                explicacion = "Un exceso de base primario compensado completamente mediante la retención pulmonar de CO₂ (hipoventilación adaptativa).";
+            } else if (paco2 < 35 && sbe < -3) {
+                diagnostico = "Alcalosis Respiratoria Totalmente Compensada";
+                tipoAlerta = "alterado";
+                explicacion = "Hiperventilación crónica donde la compensación renal (excreción de bases) ha devuelto con éxito el pH a valores normales.";
+            } else if (paco2 > 45 && sbe > 3) {
+                diagnostico = "Acidosis Respiratoria Totalmente Compensada";
+                tipoAlerta = "alterado";
+                explicacion = "Retención crónica de CO₂ donde la retención renal metabólica adaptativa de bases mantiene el pH dentro de límites fisiológicos.";
+            } else {
+                diagnostico = "Trastorno Complejo / Posible Error de Muestra";
+                tipoAlerta = "alterado";
+                explicacion = "Los valores muestran desviaciones opuestas que requieren una correlación metabólica avanzada o repetir la toma de la muestra.";
+            }
+        }
+
+        // Renderizar resultados en la interfaz
+        resultDiv.className = `result-box active ${tipoAlerta}`;
+        resultTitle.innerHTML = `<strong>Diagnóstico:</strong> ${diagnostico}`;
+        resultDetails.innerHTML = `<strong>Análisis Fisiopatológico:</strong> ${explicacion}<br><br><small><em>Nota: Realice siempre una adecuada correlación con la historia clínica y el examen físico del paciente.</em></small>`;
+    }
+</script>
+
+</body>
+</html>
