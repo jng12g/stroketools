@@ -689,7 +689,18 @@ function detectIncompatibilities(recs, trace) {
     trace.push('Fragilidad + SU: Incompatibilidad por riesgo de hipoglucemia severa.');
     incomp = true;
   }
-
+// ALERTA DE USO PREMATURO DE SULFONILUREAS (No recomendadas en 1ª o 2ª línea)
+  if (hasClass('su') && !state.fragilidad) {
+    const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'].filter(c => hasClass(c)).length;
+    // Si la SU es el primer o segundo fármaco, y no estamos en la excepción de FG < 15
+    if (clasesUsadas < 3 && state.fge >= 15) {
+      recs.push({
+        type: 'warn', tag: 'Uso Prematuro', title: 'Sulfonilureas relegadas a 3º o 4º escalón',
+        body: `El algoritmo 2026 no recomienda el uso de <strong>Sulfonilureas o Glinidas</strong> como monoterapia o doble terapia. Se han relegado a situaciones donde se precise un 3º o 4º fármaco tras fracasar otras familias con beneficios cardiorenales y menor riesgo de hipoglucemias. <em>Excepción: Uso de Repaglinida si FG < 15 ml/min.</em>`
+      });
+      trace.push('Aviso: Uso prematuro de SU/Glinidas en 1ª o 2ª línea detectado.');
+    }
+  }
   return incomp;
 }
 
