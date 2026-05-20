@@ -773,7 +773,8 @@ function generateRecs(cond, target) {
     }
     conditionHandledIntensification = true; 
   } else if (state.sintomatico) {
-    recs.push({ type: 'warn', tag: 'Clínica', title: 'Se recomienda investigar desencadenante', body: `Si el paciente presenta síntomas cardinales, investigue factores intercurrentes activos y valore el apoyo insulínico temporal.` });
+    recs.push({ type: 'warn', tag: 'Discordancia clínica-analítica', title: 'Investigar antes de intensificar', body: `La HbA1c <strong>${state.hba1c.toFixed(1)} %</strong> no justifica por sí sola la presencia de clínica cardinal (poliuria, polidipsia, pérdida de peso). Antes de modificar el tratamiento, conviene descartar tres escenarios:<br><ul><li><strong>Descompensación aguda reciente</strong> sobre un control previo aceptable (la HbA1c aún no refleja el cambio): confirme con glucemia capilar y busque desencadenante (infección activa, corticoides, pancreatitis, IAM silente, hipertiroidismo, abandono terapéutico, cambios dietéticos).</li><li><strong>Síntomas no glucémicos</strong>: diuréticos (incluidos iSGLT-2), hipercalcemia, hipopotasemia, diabetes insípida, insuficiencia renal poliúrica, causas oncológicas o psiquiátricas de pérdida de peso.</li><li><strong>Sospecha de DM1 / LADA mal clasificada</strong> si paciente joven, IMC bajo o evolución atípica: considere cetonuria/cetonemia y estudio de autoinmunidad (anti-GAD, anti-IA2).</li></ul><strong>La insulinización inmediata NO está indicada por defecto</strong> en este escenario; solo procede si confirma glucemias muy elevadas con cetosis o sospecha clara de fracaso de células beta.` });
+    trace.push('Síntomas cardinales con HbA1c < 8,5 %: alerta de discordancia clínica-analítica.');
   }
 
   if (cond.id === 'ic') { conditionHandledIntensification = handleIC(recs, trace, target) || conditionHandledIntensification; }
