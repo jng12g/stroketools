@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Algoritmo redGDPS 2026 · DM2</title>
+<title>Basado en algoritmo redGDPS 2026 · DM2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -278,7 +278,7 @@
       <div class="brand-mark">redGDPS</div>
       <div class="brand-sub">Algoritmo 2026 · DM2</div>
     </div>
-    <h1>De la <em>glucemia</em> al paciente · soporte de decisión</h1>
+    <h1>Ayuda en la <em>optimización del tratamiento farmacológico de la DM-2</em> · soporte de decisión</h1>
     <button class="reset-btn" onclick="resetAll()">Reiniciar</button>
   </div>
 </header>
