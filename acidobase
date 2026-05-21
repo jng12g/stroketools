@@ -565,17 +565,6 @@ function drugsInClass(cls) {
   return Object.entries(state.drugs).filter(([k,v]) => v && DRUG_CLASS[k] === cls).map(([k]) => k);
 }
 
-/* ============================================================
-   CAMBIO PUNTO 2: Reordenado el cascade de condicionantes para
-   respetar la prioridad visual "de izquierda a derecha" del
-   algoritmo redGDPS 2026:
-     1. ECV / RCV elevado
-     2. Insuficiencia cardíaca
-     3. ERC
-     4. Obesidad
-     5. Hepática metabólica
-     6. Fragilidad
-   ============================================================ */
 function getConditioner() {
   if (state.ecv || state.rcvAlto) { const label = state.ecv ? 'ECV establecida' : 'RCV elevado'; return { id: 'ecv', name: label, meta: 'Metformina + (iSGLT-2 o arGLP-1 o arGIP-GLP-1)' }; }
   if (state.ic) return { id: 'ic', name: 'Insuficiencia cardíaca', meta: 'iSGLT-2 (con o sin Met) → arGLP-1 o arGIP-GLP-1' };
@@ -589,12 +578,6 @@ function getConditioner() {
   return { id: null, name: 'Ninguno', meta: 'Algoritmo guiado por HbA1c y clínica cardinal' };
 }
 
-/* ============================================================
-   CAMBIO PUNTO 1: Refactorizado el objetivo HbA1c para que la
-   edad ≤ 75 años sea condición NECESARIA del objetivo < 6,5 %.
-   Un paciente > 75 años, aunque sea de diagnóstico reciente,
-   cae siempre en ≤ 7 % (la edad prevalece).
-   ============================================================ */
 function getTarget() {
   const sinComplicaciones = !state.ic && !state.ecv && !state.erc && !state.hepatica && !state.rcvAlto;
   if (state.fragilidad && state.fragGrade === 'muyGrave') {
@@ -654,7 +637,6 @@ function detectIncompatibilities(recs, trace) {
     }
   });
 
-  // FRENO DE SEGURIDAD RENAL ESTRICTO
   if (state.fge < 30) {
       recs.push({
           type: 'danger', tag: 'Alerta Renal Crítica', title: 'FGe < 30 ml/min: Manejo Especializado',
@@ -663,7 +645,6 @@ function detectIncompatibilities(recs, trace) {
       trace.push('Bloqueo de seguridad: FGe < 30 ml/min. Alerta de Nefrología activada.');
   }
 
-  // ALERTA ESPECÍFICA FGe < 15 (Nota 7 del Algoritmo)
   if (state.fge < 15) {
       recs.push({
           type: 'info', tag: 'Nefropatía Terminal', title: 'FGe < 15 ml/min: Opciones preferentes',
@@ -706,10 +687,9 @@ function detectIncompatibilities(recs, trace) {
     trace.push('Fragilidad + SU: Incompatibilidad por riesgo de hipoglucemia severa.');
     incomp = true;
   }
-// ALERTA DE USO PREMATURO DE SULFONILUREAS (No recomendadas en 1ª o 2ª línea)
+
   if (hasClass('su') && !state.fragilidad) {
     const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'].filter(c => hasClass(c)).length;
-    // Si la SU es el primer o segundo fármaco, y no estamos en la excepción de FG < 15
     if (clasesUsadas < 3 && state.fge >= 15) {
       recs.push({
         type: 'warn', tag: 'Uso Prematuro', title: 'Sulfonilureas relegadas a 3º o 4º escalón',
@@ -758,11 +738,6 @@ function generateRecs(cond, target) {
 
   const hasCriticalConflict = detectIncompatibilities(recs, trace);
 
-  /* ============================================================
-     CAMBIO PUNTO 4: Cuando hay clínica cardinal + HbA1c ≥ 8,5 %,
-     se diferencia según función renal para evitar la contradicción
-     "iniciar Metformina" + "suspender Metformina por FGe <30".
-     ============================================================ */
   if (state.sintomatico && state.hba1c >= 8.5) {
     if (state.fge >= 30) {
       recs.push({ type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulina Basal + Metformina', body: `Ante clínica cardinal grave con HbA1c ≥ 8,5 %, se debe iniciar inmediatamente <strong>Insulina Basal combinada con Metformina</strong> para frenar la glucotoxicidad.` });
@@ -808,14 +783,10 @@ function generateRecs(cond, target) {
   return { recs, trace };
 }
 
-/* ============================================================
-   CAMBIO PUNTO 5: handleIC ahora emite un info-card cuando el
-   paciente está en objetivo con iSGLT-2 y no lleva Metformina,
-   justificando por qué no se añade (nota 6 del algoritmo).
-   ============================================================ */
 function handleIC(recs, trace, target) {
   let intensified = false;
-  if (!hasClass('isglt2')) {
+  const tieneSGLT2 = hasClass('isglt2');
+  if (!tieneSGLT2) {
     if(state.fge >= 20) {
         recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar un iSGLT-2', body: `Pilar fundamental (independiente de HbA1c) por reducción de mortalidad e ingresos por IC.` });
         intensified = true;
@@ -824,25 +795,17 @@ function handleIC(recs, trace, target) {
   if (!state.drugs.metformina && state.fge >= 30 && state.hba1c > target.upperBound) {
     recs.push({ type: 'add', tag: 'Combinar', title: 'Se recomienda asociar Metformina', body: `Para optimizar el control glucémico como compañero basal (nota 6 del algoritmo).` });
     intensified = true;
-  } else if (!state.drugs.metformina && state.fge >= 30 && state.hba1c <= target.upperBound && hasClass('isglt2')) {
+  } else if (!state.drugs.metformina && state.fge >= 30 && state.hba1c <= target.upperBound && tieneSGLT2) {
     recs.push({ type: 'info', tag: 'Metformina no necesaria', title: 'No se precisa asociar Metformina', body: `El paciente ya alcanza su objetivo glucémico (HbA1c <strong>${state.hba1c.toFixed(1)} %</strong>, meta ${target.label}) con el iSGLT-2 actual. La <strong>nota 6 del algoritmo redGDPS 2026</strong> indica que la Metformina se añade <em>para optimizar el control glucémico</em>; al estar el paciente controlado, no aporta beneficio pronóstico adicional, ya que la protección cardiovascular del iSGLT-2 en IC es independiente de la HbA1c.<br><br><strong>Si en futuras revisiones la HbA1c se eleva por encima del objetivo, la Metformina debe ser el primer fármaco a añadir.</strong>` });
     trace.push('Metformina no añadida en IC: paciente en objetivo con iSGLT-2 (nota 6).');
   }
-  if (state.hba1c > target.upperBound && hasClass('isglt2') && !hasClass('arglp') && !hasClass('argip')) {
+  if (state.hba1c > target.upperBound && tieneSGLT2 && !hasClass('arglp') && !hasClass('argip')) {
     recs.push({ type: 'add', tag: 'Si insuficiente', title: 'Se recomienda añadir arGLP-1 o arGIP/GLP-1', body: `Añadir incretínicos por beneficio demostrado en ensayos recientes en pacientes con IC, como complemento al SGLT2.` });
     intensified = true;
   }
   return intensified;
 }
 
-/* ============================================================
-   CAMBIO PUNTOS 5 y 7: handleECV ahora condiciona la
-   recomendación de Metformina a HbA1c > objetivo, marca
-   correctamente intensified = true (resolviendo la doble
-   recomendación con applyGeneralIntensification), y emite un
-   info-card cuando el paciente está en objetivo con
-   cardioprotector y no precisa Metformina.
-   ============================================================ */
 function handleECV(recs, trace, target) {
   let intensified = false;
   const tieneCardio = hasClass('isglt2') || hasClass('arglp') || hasClass('argip');
@@ -865,11 +828,16 @@ function handleECV(recs, trace, target) {
 
 function handleERC(recs, trace, target) {
   let intensified = false;
-  if (state.fge >= 20 && !hasClass('isglt2')) {
+  const tieneSGLT2 = hasClass('isglt2');
+  
+  if (state.fge >= 20 && !tieneSGLT2) {
     recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar iSGLT-2', body: `Fármacos prioritarios en enfermedad renal por su capacidad para ralentizar la caída del FG y la progresión a diálisis.` });
     intensified = true;
   }
-  if (state.hba1c > target.upperBound && !hasClass('arglp') && !hasClass('argip')) {
+  
+  // CORRECCIÓN DE BUG: Solo sugiere añadir GLP-1 (2ª línea en ERC) si el paciente YA toma iSGLT-2 (1ª línea), 
+  // o si el iSGLT-2 está contraindicado por un FG menor de 20.
+  if (state.hba1c > target.upperBound && (tieneSGLT2 || state.fge < 20) && !hasClass('arglp') && !hasClass('argip')) {
     recs.push({ type: 'add', tag: '2ª línea', title: 'Se recomienda añadir arGLP-1', body: `Especialmente la semaglutida (respaldada por el estudio FLOW) por su fuerte protección renal adicional al SGLT2.` });
     intensified = true;
   }
@@ -892,12 +860,17 @@ function handleObesidad(recs, trace, target) {
 
 function handleHepatica(recs, trace, target) {
   let intensified = false;
-  if (!hasClass('arglp') && !hasClass('argip')) {
-    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda arGLP-1 o arGIP/GLP-1', body: `Indicados en hígado graso metabólico por la demostrada reversión histológica de la esteatohepatitis.` });
+  const tieneIncretina = hasClass('arglp') || hasClass('argip');
+  
+  if (!tieneIncretina) {
+    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar arGLP-1 o arGIP/GLP-1', body: `Indicados en hígado graso metabólico por la demostrada reversión histológica de la esteatohepatitis.` });
     intensified = true;
   }
-  if (state.hba1c > target.upperBound && !hasClass('isglt2') && !state.drugs.pioglitazona) {
-    recs.push({ type: 'add', tag: 'Intensificar', title: 'Se recomienda añadir iSGLT-2 o Pioglitazona', body: `Si el control glucémico fracasa, el iSGLT-2 y la Pioglitazona (ambos con beneficios hepáticos avalados) son las intensificaciones de elección.` });
+  
+  // CORRECCIÓN DE BUG: Se bloquea esta recomendación (2º escalón) hasta que el paciente YA esté en tratamiento 
+  // con la 1ª línea de incretinas (tieneIncretina === true), respetando los pasos temporales marcados por la guía.
+  if (state.hba1c > target.upperBound && tieneIncretina && !hasClass('isglt2') && !state.drugs.pioglitazona) {
+    recs.push({ type: 'add', tag: 'Intensificar (2º Escalón)', title: 'Se recomienda añadir iSGLT-2 o Pioglitazona', body: `Si el control glucémico fracasa a pesar de la terapia incretínica de base, el iSGLT-2 y la Pioglitazona (ambos con beneficios hepáticos avalados) son las intensificaciones de elección.` });
     intensified = true;
   }
   return intensified;
@@ -1012,11 +985,6 @@ function update() {
   state.drugs = {};
   document.querySelectorAll('[data-drug]').forEach(cb => { state.drugs[cb.dataset.drug] = cb.checked; });
 
-  /* ============================================================
-     CAMBIO PUNTO 6: El flag "deterioro" no debe rebajar un
-     "muyGrave" preexistente. Si el usuario ya marcó fragilidad
-     muy grave, ésta prevalece sobre el deterioro cognitivo.
-     ============================================================ */
   if (state.deterioro) {
       state.fragilidad = true; document.getElementById('fragilidad').checked = true;
       if (state.fragGrade !== 'muyGrave') {
