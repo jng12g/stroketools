@@ -602,7 +602,7 @@ function getAvailableADNIs(state) {
   if (!hasDPP4 && !hasGLP) options.push('<strong>iDPP-4</strong>: Fármacos neutros en peso y extremadamente seguros (primera línea en fragilidad y FG terminal).');
   if (!hasClass('pio') && !state.ic) options.push('<strong>Pioglitazona</strong>: Mejora la resistencia a la insulina.');
   
-  if (!hasClass('su') && !state.fragilidad) {
+  if (!hasClass('su') && !state.fragilidad && state.fge >= 15) {
     if (clasesUsadas >= 2) {
       options.push('<strong>Sulfonilureas</strong>: Útiles solo como 3er o 4º ADNI. <em>Gliclazida o Glimepirida son las de elección.</em>');
     }
@@ -657,6 +657,7 @@ function detectIncompatibilities(recs, trace) {
 
   if (hasClass('isglt2') && state.fge < 20) {
     recs.push({ type: 'danger', tag: 'Reevaluación Clínica', title: 'Atención al uso de iSGLT-2 con FGe < 20', body: `El inicio de <strong>iSGLT-2</strong> no está aprobado con FGe < 20 mL/min. Si ya los tomaba previamente para protección renal y su función ha decaído, reevalúe con nefrología su continuidad de forma estrictamente individualizada.` });
+    incomp = true;
   }
 
   if (state.drugs.pioglitazona && state.ic) {
@@ -751,7 +752,7 @@ function generateRecs(cond, target) {
 
   if (cond.id === null || (state.hba1c > target.upperBound && !conditionHandledIntensification && cond.id !== 'fragilidad' && !state.sintomatico)) {
       if (cond.id !== null) trace.push('Fármacos del condicionante optimizados pero paciente sigue fuera de objetivo -> Se aplica intensificación escalonada.');
-      applyGeneralIntensification(recs, trace, target);
+      applyGeneralIntensification(recs, trace, target, hasCriticalConflict);
   }
 
   const inTarget = state.hba1c <= target.upperBound;
@@ -891,15 +892,22 @@ function handleFragilidad(recs, trace, target) {
   return true; 
 }
 
-function applyGeneralIntensification(recs, trace, target) {
+function applyGeneralIntensification(recs, trace, target, hasCriticalConflict) {
   const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'].filter(c => hasClass(c)).length;
   
   const availableADNIs = getAvailableADNIs(state);
   let optionsText = '';
   if (availableADNIs.length > 0) {
-    optionsText = `<br><br>Para este paso de intensificación, las <strong>únicas familias farmacológicas (ADNIs) compatibles y seguras</strong> para su perfil renal y clínico actual (y que aún no toma) son:<ul><li>` + availableADNIs.join('</li><li>') + `</li></ul><em>Debe seleccionar una de ellas valorando sus preferencias y nivel de adherencia.</em>`;
+    optionsText = `<br><br>Para este paso, las <strong>únicas familias farmacológicas (ADNIs) compatibles y seguras</strong> para su perfil renal y clínico actual (y que aún no toma) son:<ul><li>` + availableADNIs.join('</li><li>') + `</li></ul><em>Debe seleccionar una de ellas valorando sus preferencias y nivel de adherencia.</em>`;
   } else {
     optionsText = `<br><br><strong>Aviso Crítico:</strong> No quedan más familias de fármacos orales ni incretínicos (ADNIs) seguras o clínicamente compatibles con su Filtrado Glomerular para añadir a su pauta. Considere insulinización directa.`;
+  }
+
+  // NUEVA REGLA: Si hay que suspender fármacos, no se intensifica, se reestructura.
+  if (hasCriticalConflict) {
+    recs.push({ type: 'add', tag: 'Reestructuración', title: 'Se requiere Reestructuración Terapéutica', body: `Dado que es obligatorio suspender o retirar parte de su tratamiento actual por motivos de seguridad (contraindicación por FGe o incompatibilidad), no procede aplicar una intensificación escalonada clásica. Debe sustituir los fármacos retirados por opciones seguras para tratar de alcanzar la meta glucémica.${optionsText}` });
+    trace.push('Intensificación bloqueada: Se requiere reestructuración previa por conflictos graves.');
+    return;
   }
 
   if (clasesUsadas === 0) {
