@@ -583,13 +583,22 @@ function getTarget() {
     return { target: 8.5, label: '7,5 - 8,5 %', rationale: 'Fragilidad moderada-grave (deterioro cognitivo/funcional). Especial precaución ante hipoglucemias.', upperBound: 8.5 };
   }
   
-  // NUEVA LÓGICA DE EDAD (<65) Y TIEMPO DE EVOLUCIÓN (<=5)
-  if (!state.fragilidad && sinComplicaciones && state.edad <= 65 && state.tiempoDx <= 5) {
-    return { target: 6.5, label: '< 6,5 %', rationale: 'Paciente joven/adulto (≤ 65 años) con diagnóstico reciente (≤ 5 años), sin complicaciones ni fragilidad: objetivo estricto (memoria metabólica).', upperBound: 6.5 };
-  }
+  // LOGICA ESTRATIFICADA SEGÚN CSV (OPENEVIDENCE TABLE 2026-05-21)
   if (!state.fragilidad && sinComplicaciones) {
-    return { target: 7.0, label: '≤ 7,0 %', rationale: 'Objetivo estándar para pacientes adultos sin complicaciones (enfermedad de más de 5 años o mayores de 65 años).', upperBound: 7.0 };
+    if (state.edad <= 40 && state.tiempoDx <= 5) {
+        return { target: 6.5, label: '≤ 6,5 %', rationale: 'Adulto joven (≤ 40 años) con diagnóstico reciente (≤ 5 años) y sin comorbilidades: objetivo estricto (memoria metabólica).', upperBound: 6.5 };
+    } else if (state.edad > 40 && state.edad <= 65) {
+        return { target: 7.0, label: '≤ 7,0 %', rationale: 'Adulto (40-65 años) sin comorbilidades. Objetivo estándar para prevención microvascular equilibrando el riesgo de hipoglucemia.', upperBound: 7.0 };
+    } else if (state.edad > 65) {
+         if (state.tiempoDx > 10) {
+             return { target: 8.0, label: '7,0 - 8,0 %', rationale: 'Adulto mayor (> 65 años) con diabetes de larga evolución. Se prioriza evitar la hipoglucemia sobre el control estricto.', upperBound: 8.0 };
+         } else {
+             return { target: 7.5, label: '≤ 7,5 %', rationale: 'Adulto mayor (> 65 años) con buen estado funcional. Equilibrio entre beneficio microvascular y riesgo de hipoglucemia.', upperBound: 7.5 };
+         }
+    }
   }
+
+  // DEFAULT
   return { target: 7.0, label: '< 7,0 %', rationale: 'Objetivo individualizado general por presencia de comorbilidad o patología orgánica establecida.', upperBound: 7.0 };
 }
 
@@ -640,7 +649,7 @@ function detectIncompatibilities(recs, trace) {
     }
   });
 
-  // ALERTAS DE CIRROSIS (Sin bloqueos físicos, pero con alertas críticas)
+  // ALERTAS DE CIRROSIS
   if (state.cirrosis) {
       if (state.drugs.metformina) {
           recs.push({ type: 'danger', tag: 'Contraindicación Absoluta', title: 'Suspender Metformina Inmediatamente', body: `En presencia de cirrosis o insuficiencia hepática grave (Child-Pugh B/C), la Metformina está formalmente contraindicada por el alto riesgo de acidosis láctica fatal.` });
@@ -651,7 +660,7 @@ function detectIncompatibilities(recs, trace) {
           incomp = true;
       }
       if (hasClass('su')) {
-          recs.push({ type: 'danger', tag: 'Contraindicación Absoluta', title: 'Suspender Sulfonilureas / Glinidas', body: `La insuficiencia hepática grave altera gravemente el aclaramiento de estos fármacos y reduce la gluconeogénesis, provocando un riesgo inaceptable de hipoglucemias severas y prolongadas.` });
+          recs.push({ type: 'danger', tag: 'Contraindicación Absoluta', title: 'Suspender Sulfonilureas / Glinidas', body: `La insuficiencia hepática grave altera el aclaramiento de estos fármacos y reduce la gluconeogénesis, provocando un riesgo inaceptable de hipoglucemias severas y prolongadas.` });
           incomp = true;
       }
   }
@@ -740,7 +749,7 @@ function renderOptimizedState(cond, state, target) {
     } else if (cond.id === 'fragilidad') {
       justificacion += `<li><strong>Seguridad Geriátrica:</strong> En base a su grado de fragilidad, la prioridad es la seguridad y evitar hipoglucemias, preservando su funcionalidad y calidad de vida.</li>`;
     } else {
-      justificacion += `<li><strong>Eficacia y Tolerabilidad:</strong> El paciente no presenta complicaciones mayores que fuercen el uso de una familia concreta, logrando un excelente control metabólico.</li>`;
+      justificacion += `<li><strong>Eficacia y Tolerabilidad:</strong> El paciente no presenta complicaciones mayores, logrando un excelente control metabólico mantenido a lo largo del tiempo.</li>`;
     }
 
     justificacion += `</ul><br><strong>Conducta a seguir:</strong> No proceden cambios farmacológicos en este momento. Se recomienda mantener el esquema vigente y citar al paciente para su control clínico rutinario (revisión de HbA1c, FGe, cociente albúmina/creatinina y peso).`;
