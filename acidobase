@@ -328,19 +328,19 @@
             <span class="check-desc">Poliuria, polidipsia, pérdida de peso no explicable</span>
           </span>
         </label>
-        <label class="check" data-check="dxReciente">
-          <input type="checkbox" id="dxReciente">
-          <span class="check-body">
-            <span class="check-label">Diagnóstico reciente</span>
-            <span class="check-desc">Primer año tras el diagnóstico</span>
-          </span>
-        </label>
       </div>
     </div>
 
     <div class="section">
       <h3 class="section-title">Condicionantes clínicos (prioridad ←→)</h3>
       <div class="check-grid">
+        <label class="check evidence" data-check="cirrosis">
+          <input type="checkbox" id="cirrosis">
+          <span class="check-body">
+            <span class="check-label">Cirrosis / Insuf. Hepática <span class="ev-badge">Evidencia</span></span>
+            <span class="check-desc">Child-Pugh B o C. Altera el metabolismo de los fármacos.</span>
+          </span>
+        </label>
         <label class="check evidence" data-check="ecv">
           <input type="checkbox" id="ecv">
           <span class="check-body">
@@ -530,7 +530,7 @@
 
 const state = {
   hba1c: 7.5, edad: 65, tiempoDx: 5, fge: 80,
-  sintomatico: false, dxReciente: false, ic: false, ecv: false, rcvAlto: false,
+  sintomatico: false, cirrosis: false, ic: false, ecv: false, rcvAlto: false,
   erc: false, obesidad: false, hepatica: false, fragilidad: false, fragGrade: 'moderadaGrave', deterioro: false,
   drugs: {}
 };
@@ -560,6 +560,7 @@ function drugsInClass(cls) {
 }
 
 function getConditioner() {
+  if (state.cirrosis) return { id: 'cirrosis', name: 'Cirrosis / Insuficiencia Hepática Grave', meta: 'Manejo altamente especializado. Fármacos seguros: Insulina o Linagliptina.' };
   if (state.ecv || state.rcvAlto) { const label = state.ecv ? 'ECV establecida' : 'RCV elevado'; return { id: 'ecv', name: label, meta: 'Metformina + (iSGLT-2 o arGLP-1 o arGIP-GLP-1)' }; }
   if (state.ic) return { id: 'ic', name: 'Insuficiencia cardíaca', meta: 'iSGLT-2 (con o sin Met) → arGLP-1 o arGIP-GLP-1' };
   if (state.erc) return { id: 'erc', name: 'Enfermedad renal crónica', meta: 'iSGLT-2 (si FGe ≥20) → arGLP-1 (preferible semaglutida)' };
@@ -573,18 +574,21 @@ function getConditioner() {
 }
 
 function getTarget() {
-  const sinComplicaciones = !state.ic && !state.ecv && !state.erc && !state.hepatica && !state.rcvAlto;
+  const sinComplicaciones = !state.ic && !state.ecv && !state.erc && !state.hepatica && !state.rcvAlto && !state.cirrosis;
+  
   if (state.fragilidad && state.fragGrade === 'muyGrave') {
     return { target: null, label: 'Evitar síntomas', rationale: 'Fragilidad muy grave o esperanza de vida limitada. No hay objetivo numérico; se prioriza evitar síntomas hiper/hipoglucémicos.', upperBound: 9.0 };
   }
   if (state.deterioro || (state.fragilidad && state.fragGrade === 'moderadaGrave')) {
     return { target: 8.5, label: '7,5 - 8,5 %', rationale: 'Fragilidad moderada-grave (deterioro cognitivo/funcional). Especial precaución ante hipoglucemias.', upperBound: 8.5 };
   }
-  if (!state.fragilidad && sinComplicaciones && state.edad <= 75 && (state.dxReciente || state.tiempoDx <= 10)) {
-    return { target: 6.5, label: '< 6,5 %', rationale: 'Paciente ≤ 75 años con diagnóstico reciente o < 10 años de evolución, sin complicaciones ni fragilidad: objetivo estricto (memoria metabólica), siempre que se logre sin hipoglucemias.', upperBound: 6.5 };
+  
+  // NUEVA LÓGICA DE EDAD (<65) Y TIEMPO DE EVOLUCIÓN (<=5)
+  if (!state.fragilidad && sinComplicaciones && state.edad <= 65 && state.tiempoDx <= 5) {
+    return { target: 6.5, label: '< 6,5 %', rationale: 'Paciente joven/adulto (≤ 65 años) con diagnóstico reciente (≤ 5 años), sin complicaciones ni fragilidad: objetivo estricto (memoria metabólica).', upperBound: 6.5 };
   }
-  if (!state.fragilidad && sinComplicaciones && (state.tiempoDx > 10 || state.edad > 75)) {
-    return { target: 7.0, label: '≤ 7,0 %', rationale: 'Paciente de larga evolución (> 10 años) o > 75 años sin complicaciones. La edad > 75 prevalece sobre el tiempo de evolución.', upperBound: 7.0 };
+  if (!state.fragilidad && sinComplicaciones) {
+    return { target: 7.0, label: '≤ 7,0 %', rationale: 'Objetivo estándar para pacientes adultos sin complicaciones (enfermedad de más de 5 años o mayores de 65 años).', upperBound: 7.0 };
   }
   return { target: 7.0, label: '< 7,0 %', rationale: 'Objetivo individualizado general por presencia de comorbilidad o patología orgánica establecida.', upperBound: 7.0 };
 }
@@ -594,6 +598,11 @@ function getAvailableADNIs(state) {
   const hasGLP = hasClass('arglp') || hasClass('argip');
   const hasDPP4 = hasClass('idpp4');
   const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'].filter(c => hasClass(c)).length;
+
+  if (state.cirrosis) {
+     if (!hasDPP4) options.push('<strong>iDPP-4</strong> (específicamente Linagliptina por su excreción biliar).');
+     return options; // Insulina se recomienda en bloque aparte para cirrosis.
+  }
 
   if (!hasClass('met') && state.fge >= 30) options.push('<strong>Metformina</strong> (base del tratamiento, económica y probada).');
   if (!hasClass('isglt2') && state.fge >= 20) options.push('<strong>iSGLT-2</strong> (ej. Empagliflozina, Dapagliflozina o Canagliflozina).');
@@ -631,7 +640,24 @@ function detectIncompatibilities(recs, trace) {
     }
   });
 
-  if (state.fge < 30) {
+  // ALERTAS DE CIRROSIS (Sin bloqueos físicos, pero con alertas críticas)
+  if (state.cirrosis) {
+      if (state.drugs.metformina) {
+          recs.push({ type: 'danger', tag: 'Contraindicación Absoluta', title: 'Suspender Metformina Inmediatamente', body: `En presencia de cirrosis o insuficiencia hepática grave (Child-Pugh B/C), la Metformina está formalmente contraindicada por el alto riesgo de acidosis láctica fatal.` });
+          incomp = true;
+      }
+      if (state.drugs.pioglitazona) {
+          recs.push({ type: 'danger', tag: 'Contraindicación Absoluta', title: 'Suspender Pioglitazona', body: `La Pioglitazona presenta riesgo de hepatotoxicidad y está formalmente contraindicada en insuficiencia hepática activa.` });
+          incomp = true;
+      }
+      if (hasClass('su')) {
+          recs.push({ type: 'danger', tag: 'Contraindicación Absoluta', title: 'Suspender Sulfonilureas / Glinidas', body: `La insuficiencia hepática grave altera gravemente el aclaramiento de estos fármacos y reduce la gluconeogénesis, provocando un riesgo inaceptable de hipoglucemias severas y prolongadas.` });
+          incomp = true;
+      }
+  }
+
+  // ALERTAS RENALES
+  if (state.fge < 30 && !state.cirrosis) {
       recs.push({
           type: 'danger', tag: 'Alerta Renal Crítica', title: 'FGe < 30 ml/min: Manejo Especializado',
           body: `El paciente presenta un Filtrado Glomerular inferior a 30 ml/min. La prescripción farmacológica automática está restringida. <strong>El manejo de este paciente debe ser consensuado y monitorizado conjuntamente con el servicio de Nefrología.</strong>`
@@ -639,7 +665,7 @@ function detectIncompatibilities(recs, trace) {
       trace.push('Bloqueo de seguridad: FGe < 30 ml/min. Alerta de Nefrología activada.');
   }
 
-  if (state.fge < 15) {
+  if (state.fge < 15 && !state.cirrosis) {
       recs.push({
           type: 'info', tag: 'Nefropatía Terminal', title: 'FGe < 15 ml/min: Opciones preferentes',
           body: `El paciente presenta un filtrado glomerular severamente reducido (< 15 ml/min). En este estadio pre-diálisis o diálisis, las únicas terapias antidiabéticas recomendadas son: <strong>iDPP-4</strong> (ajustando la dosis según ficha técnica), <strong>Repaglinida</strong>, <strong>Pioglitazona</strong> o <strong>Insulina</strong>.`
@@ -647,7 +673,7 @@ function detectIncompatibilities(recs, trace) {
       trace.push('FGe < 15 ml/min: Se restringen opciones a iDPP-4, Repaglinida, Pioglitazona o Insulina.');
   }
 
-  if (state.drugs.metformina && state.fge < 30) {
+  if (state.drugs.metformina && state.fge < 30 && !state.cirrosis) {
     recs.push({ type: 'danger', tag: 'Contraindicación Absoluta', title: 'Suspender Metformina Inmediatamente', body: `El paciente presenta un Filtrado Glomerular (FGe) de <strong>${state.fge} mL/min</strong>. A estos niveles, la Metformina está formalmente contraindicada por el riesgo severo de acidosis láctica. Se sugiere sustituir la base de tratamiento por fármacos seguros en ERC avanzada (ej. arGLP-1 si FG>=15, iDPP-4 ajustados o insulina).` });
     trace.push('FGe <30: Retirada de metformina obligatoria.');
     incomp = true;
@@ -677,13 +703,13 @@ function detectIncompatibilities(recs, trace) {
     incomp = true;
   }
 
-  if (hasClass('su') && state.fragilidad) {
+  if (hasClass('su') && state.fragilidad && !state.cirrosis) {
     recs.push({ type: 'danger', tag: 'Riesgo Geriátrico', title: 'Se recomienda retirar las Sulfonilureas / Glinidas', body: `En pacientes con fragilidad o deterioro, los secretagogos están fuertemente desaconsejados por provocar hipoglucemias severas que derivan en caídas y daño neurológico.` });
     trace.push('Fragilidad + SU: Incompatibilidad por riesgo de hipoglucemia severa.');
     incomp = true;
   }
 
-  if (hasClass('su') && !state.fragilidad) {
+  if (hasClass('su') && !state.fragilidad && !state.cirrosis) {
     const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'].filter(c => hasClass(c)).length;
     if (clasesUsadas < 3 && state.fge >= 15) {
       recs.push({
@@ -699,7 +725,9 @@ function detectIncompatibilities(recs, trace) {
 function renderOptimizedState(cond, state, target) {
     let justificacion = `El paciente ha alcanzado su objetivo glucémico individualizado (<strong>${state.hba1c.toFixed(1)} %</strong> para una meta de <strong>${target.label}</strong>). El esquema actual se considera idóneo y optimizado por los siguientes motivos clínicos:<br><ul>`;
 
-    if (cond.id === 'ic') {
+    if (cond.id === 'cirrosis') {
+      justificacion += `<li><strong>Seguridad Hepática (Cirrosis):</strong> El paciente mantiene un control adecuado apoyándose en terapias de alta seguridad metabólica en contexto de insuficiencia hepática grave, sin incurrir en fármacos hepatotóxicos o de riesgo láctico.</li>`;
+    } else if (cond.id === 'ic') {
       justificacion += `<li><strong>Beneficio Pronóstico (IC):</strong> El paciente está recibiendo tratamiento con iSGLT-2, familias con nivel de evidencia 1A para reducir drásticamente las hospitalizaciones por insuficiencia cardíaca y la mortalidad cardiovascular.</li>`;
     } else if (cond.id === 'ecv') {
       justificacion += `<li><strong>Protección Cardiovascular:</strong> Al presentar alto riesgo o evento cardiovascular, el esquema ya integra terapias cardioprotectoras (iSGLT-2, arGLP-1 o arGIP/GLP-1) que han demostrado disminuir los eventos adversos mayores (MACE).</li>`;
@@ -715,7 +743,7 @@ function renderOptimizedState(cond, state, target) {
       justificacion += `<li><strong>Eficacia y Tolerabilidad:</strong> El paciente no presenta complicaciones mayores que fuercen el uso de una familia concreta, logrando un excelente control metabólico.</li>`;
     }
 
-    justificacion += `</ul><br><strong>Conducta a seguir:</strong> No proceden cambios farmacológicos en este momento. Se recomienda mantener el esquema vigente y citar al paciente para su control clínico rutinario en 6 meses (revisión de HbA1c, FGe, cociente albúmina/creatinina y peso).`;
+    justificacion += `</ul><br><strong>Conducta a seguir:</strong> No proceden cambios farmacológicos en este momento. Se recomienda mantener el esquema vigente y citar al paciente para su control clínico rutinario (revisión de HbA1c, FGe, cociente albúmina/creatinina y peso).`;
     
     return justificacion;
 }
@@ -730,7 +758,10 @@ function generateRecs(cond, target) {
   const hasCriticalConflict = detectIncompatibilities(recs, trace);
 
   if (state.sintomatico && state.hba1c >= 8.5) {
-    if (state.fge >= 30) {
+    if (state.cirrosis) {
+      recs.push({ type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulinización Basal', body: `Ante clínica cardinal grave con HbA1c ≥ 8,5 % en paciente con cirrosis, la única opción segura para el rescate agudo es la <strong>Insulina Basal</strong>.` });
+      trace.push('Descompensación sintomática + Cirrosis: Insulinización aislada recomendada.');
+    } else if (state.fge >= 30) {
       recs.push({ type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulina Basal + Metformina', body: `Ante clínica cardinal grave con HbA1c ≥ 8,5 %, se debe iniciar inmediatamente <strong>Insulina Basal combinada con Metformina</strong> para frenar la glucotoxicidad.` });
       trace.push('Descompensación grave sintomática (FGe ≥ 30): Insulinización + Metformina.');
     } else {
@@ -743,7 +774,9 @@ function generateRecs(cond, target) {
     trace.push('Síntomas cardinales con HbA1c < 8,5 %: alerta de discordancia clínica-analítica.');
   }
 
-  if (cond.id === 'ic') { conditionHandledIntensification = handleIC(recs, trace, target) || conditionHandledIntensification; }
+  // FLUJO DE CONDICIONANTES
+  if (cond.id === 'cirrosis') { conditionHandledIntensification = handleCirrosis(recs, trace, target) || conditionHandledIntensification; }
+  else if (cond.id === 'ic') { conditionHandledIntensification = handleIC(recs, trace, target) || conditionHandledIntensification; }
   else if (cond.id === 'ecv') { conditionHandledIntensification = handleECV(recs, trace, target) || conditionHandledIntensification; }
   else if (cond.id === 'erc') { conditionHandledIntensification = handleERC(recs, trace, target) || conditionHandledIntensification; }
   else if (cond.id === 'obesidad') { conditionHandledIntensification = handleObesidad(recs, trace, target) || conditionHandledIntensification; }
@@ -766,8 +799,13 @@ function generateRecs(cond, target) {
     });
   } else if (state.hba1c > target.upperBound && target.target !== null && recs.some(r => r.type === 'add' || r.type === 'danger')) {
     
-    // GESTIÓN DEL SEGUIMIENTO NEFROLÓGICO DINÁMICO
-    if (state.fge < 45) {
+    // GESTIÓN DEL SEGUIMIENTO DINÁMICO
+    if (state.cirrosis) {
+      recs.push({
+        type: 'warn', tag: 'Seguimiento Estrecho', title: 'Control por Aparato Digestivo / Especialista',
+        body: `Dada la insuficiencia hepática terminal y la fragilidad del metabolismo glucídico, cualquier modificación farmacológica exige un control muy estrecho por su especialista para monitorizar riesgo de hipoglucemias o deterioro de la función hepática.`
+      });
+    } else if (state.fge < 45) {
       recs.push({
         type: 'warn', tag: 'Seguimiento Estrecho', title: 'Control y seguimiento nefrológico < 3 meses',
         body: `Dada la insuficiencia renal significativa (FGe ${state.fge} mL/min) y la necesidad de ajustar el tratamiento, el paciente requiere un control analítico y seguimiento estrecho conjuntamente con Nefrología en un plazo <strong>inferior a 3 meses</strong> para monitorizar la función renal, los niveles de potasio y la tolerabilidad de la nueva pauta.`
@@ -781,6 +819,19 @@ function generateRecs(cond, target) {
   }
 
   return { recs, trace };
+}
+
+function handleCirrosis(recs, trace, target) {
+  let intensified = false;
+  if (!hasClass('idpp4') && !hasClass('ins')) {
+    recs.push({ type: 'add', tag: 'Terapia Segura', title: 'Se recomienda iDPP-4 o Insulina', body: `El manejo de la diabetes en la cirrosis hepática avanzada es muy restrictivo. Las opciones más seguras son los <strong>iDPP-4</strong> (especialmente la Linagliptina por su eliminación biliar que no exige ajuste) o la <strong>Insulina</strong>.` });
+    intensified = true;
+  }
+  if (state.hba1c > target.upperBound && hasClass('idpp4') && !hasClass('ins')) {
+    recs.push({ type: 'add', tag: 'Intensificar', title: 'Se recomienda Insulinización', body: `Al no alcanzar el objetivo con un iDPP-4, la opción de rescate más segura y eficaz en la insuficiencia hepática grave es la <strong>Insulina</strong>.` });
+    intensified = true;
+  }
+  return true; // Al tener cirrosis se bloquean otras ramas de intensificación automática.
 }
 
 function handleIC(recs, trace, target) {
@@ -898,14 +949,14 @@ function applyGeneralIntensification(recs, trace, target, hasCriticalConflict) {
   const availableADNIs = getAvailableADNIs(state);
   let optionsText = '';
   if (availableADNIs.length > 0) {
-    optionsText = `<br><br>Para este paso, las <strong>únicas familias farmacológicas (ADNIs) compatibles y seguras</strong> para su perfil renal y clínico actual (y que aún no toma) son:<ul><li>` + availableADNIs.join('</li><li>') + `</li></ul><em>Debe seleccionar una de ellas valorando sus preferencias y nivel de adherencia.</em>`;
+    optionsText = `<br><br>Para este paso, las <strong>únicas familias farmacológicas (ADNIs) compatibles y seguras</strong> para su perfil orgánico actual (y que aún no toma) son:<ul><li>` + availableADNIs.join('</li><li>') + `</li></ul><em>Debe seleccionar una de ellas valorando sus preferencias y nivel de adherencia.</em>`;
   } else {
-    optionsText = `<br><br><strong>Aviso Crítico:</strong> No quedan más familias de fármacos orales ni incretínicos (ADNIs) seguras o clínicamente compatibles con su Filtrado Glomerular para añadir a su pauta. Considere insulinización directa.`;
+    optionsText = `<br><br><strong>Aviso Crítico:</strong> No quedan más familias de fármacos orales ni incretínicos (ADNIs) seguras o clínicamente compatibles con sus condicionantes. Considere insulinización directa.`;
   }
 
-  // NUEVA REGLA: Si hay que suspender fármacos, no se intensifica, se reestructura.
+  // REGLA: Si hay que suspender fármacos, no se intensifica, se reestructura.
   if (hasCriticalConflict) {
-    recs.push({ type: 'add', tag: 'Reestructuración', title: 'Se requiere Reestructuración Terapéutica', body: `Dado que es obligatorio suspender o retirar parte de su tratamiento actual por motivos de seguridad (contraindicación por FGe o incompatibilidad), no procede aplicar una intensificación escalonada clásica. Debe sustituir los fármacos retirados por opciones seguras para tratar de alcanzar la meta glucémica.${optionsText}` });
+    recs.push({ type: 'add', tag: 'Reestructuración', title: 'Se requiere Reestructuración Terapéutica', body: `Dado que es obligatorio suspender o retirar parte de su tratamiento actual por motivos de seguridad médica (riesgo grave detectado), no procede aplicar una intensificación escalonada clásica. Debe sustituir los fármacos retirados por opciones seguras para tratar de alcanzar la meta glucémica.${optionsText}` });
     trace.push('Intensificación bloqueada: Se requiere reestructuración previa por conflictos graves.');
     return;
   }
@@ -918,7 +969,7 @@ function applyGeneralIntensification(recs, trace, target, hasCriticalConflict) {
           let textOpciones = `un <strong>iDPP-4</strong> (ajustando la dosis por ERC)`;
           if (state.fge >= 15) textOpciones += ` o un <strong>arGLP-1</strong>`;
           
-          recs.push({ type: 'add', tag: 'Inicio Intensivo', title: 'Se recomienda iniciar Monoterapia Segura Renal / Insulina', body: `Al presentar HbA1c altísima (≥ 8,5 %) y un FGe < 30 (que contraindica la Metformina), debe evaluarse el inicio cuidadoso de terapias limitadas por función renal (${textOpciones}) o insulinización basal transitoria.` });
+          recs.push({ type: 'add', tag: 'Inicio Intensivo', title: 'Se recomienda iniciar Monoterapia Segura / Insulina', body: `Al presentar HbA1c altísima (≥ 8,5 %) y un FGe < 30 (que contraindica la Metformina), debe evaluarse el inicio cuidadoso de terapias limitadas por función renal (${textOpciones}) o insulinización basal transitoria.` });
       }
       trace.push('Paciente sin tratamiento y HbA1c >= 8.5: Inicio inmediato con doble terapia o insulina según FGe.');
     } else if (state.hba1c > target.upperBound) {
@@ -988,7 +1039,7 @@ function update() {
   state.tiempoDx = parseFloat(document.getElementById('tiempoDx').value) || 0;
   state.fge = parseFloat(document.getElementById('fge').value) || 0;
   state.sintomatico = document.getElementById('sintomatico').checked;
-  state.dxReciente = document.getElementById('dxReciente').checked;
+  state.cirrosis = document.getElementById('cirrosis').checked;
   state.ic = document.getElementById('ic').checked;
   state.ecv = document.getElementById('ecv').checked;
   state.rcvAlto = document.getElementById('rcvAlto').checked;
