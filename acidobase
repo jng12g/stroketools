@@ -313,6 +313,7 @@
         <div class="field">
           <label>FG estimado (mL/min)</label>
           <input type="number" id="fge" min="5" max="150" value="80">
+          <div class="field-hint" id="fgeHint" style="margin-top:4px; font-size:11.5px; line-height:1.2;"></div>
         </div>
       </div>
     </div>
@@ -351,7 +352,7 @@
           <input type="checkbox" id="rcvAlto">
           <span class="check-body">
             <span class="check-label">RCV alto <span class="ev-badge">Evidencia</span></span>
-            <span class="check-desc">≥3 FRCV (HTA, dislipemia, tabaco, ERC, albuminuria, obesidad, AF precoz)</span>
+            <span class="check-desc">≥3 FRCV (HTA, dislipemia, tabaco, albuminuria, obesidad, AF precoz)</span>
           </span>
         </label>
         <label class="check evidence" data-check="ic">
@@ -359,13 +360,6 @@
           <span class="check-body">
             <span class="check-label">Insuficiencia cardíaca <span class="ev-badge">Evidencia</span></span>
             <span class="check-desc">Cualquier FE; con o sin descompensación</span>
-          </span>
-        </label>
-        <label class="check evidence" data-check="erc">
-          <input type="checkbox" id="erc">
-          <span class="check-body">
-            <span class="check-label">ERC <span class="ev-badge">Evidencia</span></span>
-            <span class="check-desc">FG &lt; 60 o albuminuria persistente</span>
           </span>
         </label>
         <label class="check" data-check="obesidad">
@@ -592,7 +586,7 @@ function getTarget() {
   if (!state.fragilidad && sinComplicaciones && (state.tiempoDx > 10 || state.edad > 75)) {
     return { target: 7.0, label: '≤ 7,0 %', rationale: 'Paciente de larga evolución (> 10 años) o > 75 años sin complicaciones. La edad > 75 prevalece sobre el tiempo de evolución.', upperBound: 7.0 };
   }
-  return { target: 7.0, label: '< 7,0 %', rationale: 'Objetivo individualizado general por presencia de comorbilidad establecida.', upperBound: 7.0 };
+  return { target: 7.0, label: '< 7,0 %', rationale: 'Objetivo individualizado general por presencia de comorbilidad o patología orgánica establecida.', upperBound: 7.0 };
 }
 
 function getAvailableADNIs(state) {
@@ -604,8 +598,8 @@ function getAvailableADNIs(state) {
   if (!hasClass('met') && state.fge >= 30) options.push('<strong>Metformina</strong> (base del tratamiento, económica y probada).');
   if (!hasClass('isglt2') && state.fge >= 20) options.push('<strong>iSGLT-2</strong> (ej. Empagliflozina, Dapagliflozina o Canagliflozina).');
   
-  if (!hasGLP) options.push('<strong>arGLP-1</strong> (ej. Semaglutida, Dulaglutida) o <strong>arGIP/GLP-1</strong> (Tirzepatida).');
-  if (!hasDPP4 && !hasGLP) options.push('<strong>iDPP-4</strong>: Fármacos neutros en peso y extremadamente seguros (primera línea en fragilidad).');
+  if (!hasGLP && state.fge >= 15) options.push('<strong>arGLP-1</strong> (ej. Semaglutida, Dulaglutida) o <strong>arGIP/GLP-1</strong> (Tirzepatida).');
+  if (!hasDPP4 && !hasGLP) options.push('<strong>iDPP-4</strong>: Fármacos neutros en peso y extremadamente seguros (primera línea en fragilidad y FG terminal).');
   if (!hasClass('pio') && !state.ic) options.push('<strong>Pioglitazona</strong>: Mejora la resistencia a la insulina.');
   
   if (!hasClass('su') && !state.fragilidad) {
@@ -630,7 +624,7 @@ function detectIncompatibilities(recs, trace) {
       const drugNames = selectedInClass.map(d => DRUG_LABELS[d]).join(' y ');
       recs.push({
         type: 'danger', tag: 'Duplicidad Terapéutica', title: 'Asociación Incompatible por misma familia',
-        body: `Se ha detectado el uso simultáneo de <strong>${drugNames}</strong>. Estos fármacos pertenecen a la misma familia terapéutica. Su combinación no aporta beneficio clínico adicional, es completamente redundante y aumenta exponencialmente el riesgo de efectos secundarios. <strong>Se debe suspender de inmediato uno de ellos</strong> y, si el paciente precisa mayor control, sustituirlo por un fármaco de una familia distinta y compatible.`
+        body: `Se ha detectado el uso simultáneo de <strong>${drugNames}</strong>. Estos fármacos pertenecen a la misma familia terapéutica. Su combinación no aporta beneficio clínico adicional, es completamente redundante y aumenta exponencialmente el riesgo de efectos secundarios. <strong>Se debe suspender de inmediato uno de ellos</strong>.`
       });
       trace.push(`Incompatibilidad detectada: Duplicidad en la familia ${cls} (${drugNames}).`);
       incomp = true;
@@ -648,42 +642,42 @@ function detectIncompatibilities(recs, trace) {
   if (state.fge < 15) {
       recs.push({
           type: 'info', tag: 'Nefropatía Terminal', title: 'FGe < 15 ml/min: Opciones preferentes',
-          body: `El paciente presenta un filtrado glomerular severamente reducido (< 15 ml/min). En este estadio, las únicas terapias antidiabéticas recomendadas son: <strong>iDPP-4</strong> (ajustando la dosis según ficha técnica), <strong>Repaglinida</strong>, <strong>Pioglitazona</strong> o <strong>Insulina</strong>.`
+          body: `El paciente presenta un filtrado glomerular severamente reducido (< 15 ml/min). En este estadio pre-diálisis o diálisis, las únicas terapias antidiabéticas recomendadas son: <strong>iDPP-4</strong> (ajustando la dosis según ficha técnica), <strong>Repaglinida</strong>, <strong>Pioglitazona</strong> o <strong>Insulina</strong>.`
       });
       trace.push('FGe < 15 ml/min: Se restringen opciones a iDPP-4, Repaglinida, Pioglitazona o Insulina.');
   }
 
   if (state.drugs.metformina && state.fge < 30) {
-    recs.push({ type: 'danger', tag: 'Contraindicación Absoluta', title: 'Suspender Metformina Inmediatamente', body: `El paciente presenta un Filtrado Glomerular (FGe) de <strong>${state.fge} mL/min</strong>. A estos niveles, la Metformina está formalmente contraindicada por el riesgo severo de acidosis láctica. Se sugiere sustituir la base de tratamiento por fármacos seguros en ERC avanzada (ej. arGLP-1, iDPP-4 ajustados o insulina).` });
+    recs.push({ type: 'danger', tag: 'Contraindicación Absoluta', title: 'Suspender Metformina Inmediatamente', body: `El paciente presenta un Filtrado Glomerular (FGe) de <strong>${state.fge} mL/min</strong>. A estos niveles, la Metformina está formalmente contraindicada por el riesgo severo de acidosis láctica. Se sugiere sustituir la base de tratamiento por fármacos seguros en ERC avanzada (ej. arGLP-1 si FG>=15, iDPP-4 ajustados o insulina).` });
     trace.push('FGe <30: Retirada de metformina obligatoria.');
     incomp = true;
   } else if (state.drugs.metformina && state.fge < 45) {
-    recs.push({ type: 'warn', tag: 'Ajuste de dosis', title: 'Se recomienda reducir la dosis de Metformina', body: `Con un FGe en el rango 30-45 mL/min, la Metformina exige precaución. Se debe reducir su dosis al 50% de la máxima tolerada previamente.` });
+    recs.push({ type: 'warn', tag: 'Ajuste de dosis', title: 'Se recomienda reducir la dosis de Metformina', body: `Con un FGe de ${state.fge} mL/min (en el rango 30-45), la Metformina exige precaución extrema. Se debe reducir obligatoriamente su dosis al 50% de la máxima tolerada previamente.` });
   }
 
   if (hasClass('isglt2') && state.fge < 20) {
-    recs.push({ type: 'danger', tag: 'Reevaluación Clínica', title: 'Atención al uso de iSGLT-2 con FGe < 20', body: `El inicio de <strong>iSGLT-2</strong> no está aprobado con FGe < 20 mL/min. Si ya los tomaba previamente para protección renal y su función ha decaído, reevalúe con nefrología su continuidad.` });
+    recs.push({ type: 'danger', tag: 'Reevaluación Clínica', title: 'Atención al uso de iSGLT-2 con FGe < 20', body: `El inicio de <strong>iSGLT-2</strong> no está aprobado con FGe < 20 mL/min. Si ya los tomaba previamente para protección renal y su función ha decaído, reevalúe con nefrología su continuidad de forma estrictamente individualizada.` });
   }
 
   if (state.drugs.pioglitazona && state.ic) {
-    recs.push({ type: 'danger', tag: 'Contraindicación', title: 'Se recomienda suspender la Pioglitazona', body: `La <strong>Pioglitazona</strong> está contraindicada en Insuficiencia Cardíaca. Este fármaco produce retención hidrosalina y aumenta el riesgo de exacerbación e ingreso hospitalario por IC. Se sugiere cambiar a un <strong>iSGLT-2</strong>, que tiene el efecto diametralmente opuesto y protege el corazón.` });
+    recs.push({ type: 'danger', tag: 'Contraindicación', title: 'Se recomienda suspender la Pioglitazona', body: `La <strong>Pioglitazona</strong> está contraindicada en Insuficiencia Cardíaca. Este fármaco produce retención hidrosalina y aumenta el riesgo de exacerbación. Se sugiere cambiar a un <strong>iSGLT-2</strong>.` });
     trace.push('Pioglitazona + IC: Incompatibilidad crítica.');
     incomp = true;
   }
 
   if (hasClass('idpp4') && (hasClass('arglp') || hasClass('argip'))) {
-    recs.push({ type: 'danger', tag: 'Incompatibilidad Farmacodinámica', title: 'Se recomienda suspender el iDPP-4', body: `El paciente toma un <strong>iDPP-4</strong> simultáneamente con un análogo incretínico inyectable (<strong>arGLP-1 o arGIP/GLP-1</strong>). Al actuar ambos sobre la misma vía del GLP-1, su combinación carece de sinergia glucémica y es redundante. <strong>Sugerencia:</strong> Mantenga el inyectable (por su mayor potencia y protección vascular) y retire el iDPP-4 de la pauta.` });
+    recs.push({ type: 'danger', tag: 'Incompatibilidad Farmacodinámica', title: 'Se recomienda suspender el iDPP-4', body: `El paciente toma un <strong>iDPP-4</strong> simultáneamente con un análogo incretínico inyectable (<strong>arGLP-1 o arGIP/GLP-1</strong>). Su combinación carece de sinergia glucémica y es redundante. <strong>Sugerencia:</strong> Mantenga el inyectable y retire el iDPP-4 de la pauta.` });
     trace.push('Incompatibilidad: Solapamiento incretínico iDPP-4 + análogos inyectables.');
     incomp = true;
   }
 
   if (hasClass('arglp') && hasClass('argip')) {
-    recs.push({ type: 'danger', tag: 'Incompatibilidad', title: 'Asociación Incompatible de Inyectables', body: `No se deben prescribir simultáneamente un <strong>arGLP-1</strong> (ej. semaglutida, dulaglutida) y un <strong>arGIP/GLP-1</strong> (Tirzepatida). Son moléculas de la misma clase basal y su uso combinado es erróneo. Elija el más adecuado y suspenda el otro.` });
+    recs.push({ type: 'danger', tag: 'Incompatibilidad', title: 'Asociación Incompatible de Inyectables', body: `No se deben prescribir simultáneamente un <strong>arGLP-1</strong> y un <strong>arGIP/GLP-1</strong> (Tirzepatida). Son moléculas de la misma clase basal y su uso combinado es erróneo.` });
     incomp = true;
   }
 
   if (hasClass('su') && state.fragilidad) {
-    recs.push({ type: 'danger', tag: 'Riesgo Geriátrico', title: 'Se recomienda retirar las Sulfonilureas / Glinidas', body: `En pacientes con fragilidad o deterioro, los secretagogos (<strong>glimepirida, gliclazida, repaglinida</strong>) están fuertemente desaconsejados por provocar hipoglucemias severas que derivan en caídas y daño neurológico. <strong>Sugerencia:</strong> Sustituir por familias con extrema seguridad frente a bajadas de azúcar, como los <strong>iDPP-4</strong>.` });
+    recs.push({ type: 'danger', tag: 'Riesgo Geriátrico', title: 'Se recomienda retirar las Sulfonilureas / Glinidas', body: `En pacientes con fragilidad o deterioro, los secretagogos están fuertemente desaconsejados por provocar hipoglucemias severas que derivan en caídas y daño neurológico.` });
     trace.push('Fragilidad + SU: Incompatibilidad por riesgo de hipoglucemia severa.');
     incomp = true;
   }
@@ -705,23 +699,19 @@ function renderOptimizedState(cond, state, target) {
     let justificacion = `El paciente ha alcanzado su objetivo glucémico individualizado (<strong>${state.hba1c.toFixed(1)} %</strong> para una meta de <strong>${target.label}</strong>). El esquema actual se considera idóneo y optimizado por los siguientes motivos clínicos:<br><ul>`;
 
     if (cond.id === 'ic') {
-      justificacion += `<li><strong>Beneficio Pronóstico (IC):</strong> El paciente está recibiendo tratamiento con iSGLT-2 (y/o análogos incretínicos si procede), familias con nivel de evidencia 1A para reducir drásticamente las hospitalizaciones por insuficiencia cardíaca y la mortalidad cardiovascular.</li>`;
+      justificacion += `<li><strong>Beneficio Pronóstico (IC):</strong> El paciente está recibiendo tratamiento con iSGLT-2, familias con nivel de evidencia 1A para reducir drásticamente las hospitalizaciones por insuficiencia cardíaca y la mortalidad cardiovascular.</li>`;
     } else if (cond.id === 'ecv') {
-      justificacion += `<li><strong>Protección Cardiovascular:</strong> Al presentar alto riesgo o evento cardiovascular establecido, el esquema ya integra terapias cardioprotectoras (iSGLT-2, arGLP-1 o arGIP/GLP-1) que han demostrado disminuir los eventos adversos mayores (MACE), protegiendo el órgano diana independientemente de la glucemia.</li>`;
+      justificacion += `<li><strong>Protección Cardiovascular:</strong> Al presentar alto riesgo o evento cardiovascular, el esquema ya integra terapias cardioprotectoras (iSGLT-2, arGLP-1 o arGIP/GLP-1) que han demostrado disminuir los eventos adversos mayores (MACE).</li>`;
     } else if (cond.id === 'erc') {
-      justificacion += `<li><strong>Nefroprotección:</strong> El régimen incluye fármacos de primera línea para la enfermedad renal (iSGLT-2 y/o arGLP-1), que ralentizan significativamente la caída del filtrado glomerular y la progresión a nefropatía terminal.</li>`;
+      justificacion += `<li><strong>Nefroprotección:</strong> El régimen incluye fármacos de primera línea para la enfermedad renal, que ralentizan significativamente la caída del filtrado glomerular y la progresión a nefropatía terminal.</li>`;
     } else if (cond.id === 'obesidad') {
-      justificacion += `<li><strong>Control Ponderal Activo:</strong> Teniendo obesidad como condicionante principal, el esquema actual incorpora moléculas (arGLP-1, arGIP/GLP-1 o iSGLT-2) que favorecen una pérdida de peso clínicamente relevante, atacando la base metabólica de la resistencia a la insulina.</li>`;
+      justificacion += `<li><strong>Control Ponderal Activo:</strong> Teniendo obesidad como condicionante principal, el esquema actual incorpora moléculas que favorecen una pérdida de peso clínicamente relevante.</li>`;
     } else if (cond.id === 'hepatica') {
-      justificacion += `<li><strong>Mejora Histológica Hepática:</strong> El tratamiento incluye opciones (arGLP-1, arGIP/GLP-1, iSGLT-2 o pioglitazona) que han evidenciado capacidad para revertir o frenar la progresión de la esteatohepatitis metabólica y reducir la inflamación.</li>`;
+      justificacion += `<li><strong>Mejora Histológica Hepática:</strong> El tratamiento incluye opciones que han evidenciado capacidad para revertir o frenar la progresión de la esteatohepatitis metabólica.</li>`;
     } else if (cond.id === 'fragilidad') {
-      justificacion += `<li><strong>Seguridad Geriátrica:</strong> En base a su grado de fragilidad, la prioridad es la seguridad. Su esquema actual está libre de sulfonilureas y/o se fundamenta en fármacos de muy bajo riesgo de hipoglucemias (como los iDPP-4), preservando su funcionalidad y calidad de vida.</li>`;
+      justificacion += `<li><strong>Seguridad Geriátrica:</strong> En base a su grado de fragilidad, la prioridad es la seguridad y evitar hipoglucemias, preservando su funcionalidad y calidad de vida.</li>`;
     } else {
-      justificacion += `<li><strong>Eficacia y Tolerabilidad:</strong> El paciente no presenta complicaciones mayores que fuercen el uso de una familia concreta, y está logrando un excelente control glucémico y metabólico con una medicación bien tolerada y exenta de conflictos farmacológicos.</li>`;
-    }
-
-    if (hasClass('met')) {
-      justificacion += `<li><strong>Base Terapéutica Consolidada:</strong> Mantiene la Metformina como pilar del tratamiento, justificado por su probada eficacia, bajo coste y seguridad metabólica sostenida en el tiempo.</li>`;
+      justificacion += `<li><strong>Eficacia y Tolerabilidad:</strong> El paciente no presenta complicaciones mayores que fuercen el uso de una familia concreta, logrando un excelente control metabólico.</li>`;
     }
 
     justificacion += `</ul><br><strong>Conducta a seguir:</strong> No proceden cambios farmacológicos en este momento. Se recomienda mantener el esquema vigente y citar al paciente para su control clínico rutinario en 6 meses (revisión de HbA1c, FGe, cociente albúmina/creatinina y peso).`;
@@ -748,7 +738,7 @@ function generateRecs(cond, target) {
     }
     conditionHandledIntensification = true; 
   } else if (state.sintomatico) {
-    recs.push({ type: 'warn', tag: 'Discordancia clínica-analítica', title: 'Investigar antes de intensificar', body: `La HbA1c <strong>${state.hba1c.toFixed(1)} %</strong> no justifica por sí sola la presencia de clínica cardinal (poliuria, polidipsia, pérdida de peso). Antes de modificar el tratamiento, conviene descartar tres escenarios:<br><ul><li><strong>Descompensación aguda reciente</strong> sobre un control previo aceptable (la HbA1c aún no refleja el cambio): confirme con glucemia capilar y busque desencadenante (infección activa, corticoides, pancreatitis, IAM silente, hipertiroidismo, abandono terapéutico, cambios dietéticos).</li><li><strong>Síntomas no glucémicos</strong>: diuréticos (incluidos iSGLT-2), hipercalcemia, hipopotasemia, diabetes insípida, insuficiencia renal poliúrica, causas oncológicas o psiquiátricas de pérdida de peso.</li><li><strong>Sospecha de DM1 / LADA mal clasificada</strong> si paciente joven, IMC bajo o evolución atípica: considere cetonuria/cetonemia y estudio de autoinmunidad (anti-GAD, anti-IA2).</li></ul><strong>La insulinización inmediata NO está indicada por defecto</strong> en este escenario; solo procede si confirma glucemias muy elevadas con cetosis o sospecha clara de fracaso de células beta.` });
+    recs.push({ type: 'warn', tag: 'Discordancia clínica-analítica', title: 'Investigar antes de intensificar', body: `La HbA1c <strong>${state.hba1c.toFixed(1)} %</strong> no justifica por sí sola la presencia de clínica cardinal (poliuria, polidipsia, pérdida de peso). Antes de insulinizar confirme con glucemia capilar y busque desencadenantes agudos, fármacos u otras patologías.` });
     trace.push('Síntomas cardinales con HbA1c < 8,5 %: alerta de discordancia clínica-analítica.');
   }
 
@@ -774,10 +764,19 @@ function generateRecs(cond, target) {
       body: justificacionOptimizado
     });
   } else if (state.hba1c > target.upperBound && target.target !== null && recs.some(r => r.type === 'add' || r.type === 'danger')) {
-    recs.push({
-      type: 'warn', tag: 'Seguimiento', title: 'Se recomienda reevaluar a los 3 meses',
-      body: `Al no alcanzar el objetivo hoy y requerirse cambios o correcciones en el tratamiento, es obligatorio realizar un control de HbA1c a los 3 meses para evitar inercia clínica y confirmar la eficacia de la pauta establecida.`
-    });
+    
+    // GESTIÓN DEL SEGUIMIENTO NEFROLÓGICO DINÁMICO
+    if (state.fge < 45) {
+      recs.push({
+        type: 'warn', tag: 'Seguimiento Estrecho', title: 'Control y seguimiento nefrológico < 3 meses',
+        body: `Dada la insuficiencia renal significativa (FGe ${state.fge} mL/min) y la necesidad de ajustar el tratamiento, el paciente requiere un control analítico y seguimiento estrecho conjuntamente con Nefrología en un plazo <strong>inferior a 3 meses</strong> para monitorizar la función renal, los niveles de potasio y la tolerabilidad de la nueva pauta.`
+      });
+    } else {
+      recs.push({
+        type: 'warn', tag: 'Seguimiento', title: 'Se recomienda reevaluar a los 3 meses',
+        body: `Al no alcanzar el objetivo hoy y requerirse cambios o correcciones en el tratamiento, es obligatorio realizar un control de HbA1c a los 3 meses para evitar inercia clínica y confirmar la eficacia de la pauta establecida.`
+      });
+    }
   }
 
   return { recs, trace };
@@ -796,12 +795,13 @@ function handleIC(recs, trace, target) {
     recs.push({ type: 'add', tag: 'Combinar', title: 'Se recomienda asociar Metformina', body: `Para optimizar el control glucémico como compañero basal (nota 6 del algoritmo).` });
     intensified = true;
   } else if (!state.drugs.metformina && state.fge >= 30 && state.hba1c <= target.upperBound && tieneSGLT2) {
-    recs.push({ type: 'info', tag: 'Metformina no necesaria', title: 'No se precisa asociar Metformina', body: `El paciente ya alcanza su objetivo glucémico (HbA1c <strong>${state.hba1c.toFixed(1)} %</strong>, meta ${target.label}) con el iSGLT-2 actual. La <strong>nota 6 del algoritmo redGDPS 2026</strong> indica que la Metformina se añade <em>para optimizar el control glucémico</em>; al estar el paciente controlado, no aporta beneficio pronóstico adicional, ya que la protección cardiovascular del iSGLT-2 en IC es independiente de la HbA1c.<br><br><strong>Si en futuras revisiones la HbA1c se eleva por encima del objetivo, la Metformina debe ser el primer fármaco a añadir.</strong>` });
-    trace.push('Metformina no añadida en IC: paciente en objetivo con iSGLT-2 (nota 6).');
+    recs.push({ type: 'info', tag: 'Metformina no necesaria', title: 'No se precisa asociar Metformina', body: `El paciente ya alcanza su objetivo glucémico con el iSGLT-2 actual. Al estar controlado, la Metformina no aporta beneficio pronóstico adicional en IC.` });
   }
   if (state.hba1c > target.upperBound && tieneSGLT2 && !hasClass('arglp') && !hasClass('argip')) {
-    recs.push({ type: 'add', tag: 'Si insuficiente', title: 'Se recomienda añadir arGLP-1 o arGIP/GLP-1', body: `Añadir incretínicos por beneficio demostrado en ensayos recientes en pacientes con IC, como complemento al SGLT2.` });
-    intensified = true;
+    if(state.fge >= 15) {
+      recs.push({ type: 'add', tag: 'Si insuficiente', title: 'Se recomienda añadir arGLP-1 o arGIP/GLP-1', body: `Añadir incretínicos por beneficio demostrado en ensayos recientes en pacientes con IC, como complemento al SGLT2.` });
+      intensified = true;
+    }
   }
   return intensified;
 }
@@ -810,17 +810,16 @@ function handleECV(recs, trace, target) {
   let intensified = false;
   const tieneCardio = hasClass('isglt2') || hasClass('arglp') || hasClass('argip');
   if (!state.drugs.metformina && state.fge >= 30 && state.hba1c > target.upperBound) {
-    recs.push({ type: 'add', tag: 'Añadir base', title: 'Se recomienda prescribir Metformina', body: `Compañero basal para optimizar el control glucémico en ECV (nota 6 del algoritmo). El paciente está fuera de objetivo y la Metformina es el primer fármaco a añadir.` });
+    recs.push({ type: 'add', tag: 'Añadir base', title: 'Se recomienda prescribir Metformina', body: `Compañero basal para optimizar el control glucémico en ECV. El paciente está fuera de objetivo y la Metformina es el primer fármaco a añadir.` });
     intensified = true;
   } else if (!state.drugs.metformina && state.fge >= 30 && state.hba1c <= target.upperBound && tieneCardio) {
-    recs.push({ type: 'info', tag: 'Metformina no necesaria', title: 'No se precisa añadir Metformina', body: `El paciente ya alcanza su objetivo glucémico (HbA1c <strong>${state.hba1c.toFixed(1)} %</strong>, meta ${target.label}) con el cardioprotector actual. La <strong>nota 6 del algoritmo redGDPS 2026</strong> indica que la Metformina se añade <em>para optimizar el control glucémico</em>; al estar el paciente controlado, no aporta beneficio pronóstico adicional sobre el iSGLT-2/arGLP-1, ya que la protección cardiovascular de éstos es independiente de la HbA1c.<br><br><strong>Si en futuras revisiones la HbA1c se eleva por encima del objetivo, la Metformina debe ser el primer fármaco a añadir.</strong>` });
-    trace.push('Metformina no añadida en ECV: paciente en objetivo con cardioprotector (nota 6).');
+    recs.push({ type: 'info', tag: 'Metformina no necesaria', title: 'No se precisa añadir Metformina', body: `El paciente ya alcanza su objetivo glucémico con el cardioprotector actual.` });
   }
   if (!tieneCardio) {
     recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda terapia combinada temprana', body: `Iniciar Metformina + (iSGLT-2 o arGLP-1 o arGIP/GLP-1) de inmediato, independientemente de la cifra de HbA1c, para frenar eventos MACE.` });
     intensified = true;
   } else if (state.hba1c > target.upperBound && !(hasClass('isglt2') && (hasClass('arglp') || hasClass('argip')))) {
-    recs.push({ type: 'add', tag: 'Intensificar', title: 'Se recomienda sumar una segunda familia cardioprotectora', body: `Se recomienda combinar un iSGLT-2 con un arGLP-1/arGIP-GLP-1 simultáneamente para maximizar el pronóstico y atacar la hiperglucemia persistente.` });
+    recs.push({ type: 'add', tag: 'Intensificar', title: 'Se recomienda sumar una segunda familia cardioprotectora', body: `Se recomienda combinar un iSGLT-2 con un arGLP-1/arGIP-GLP-1 simultáneamente para maximizar el pronóstico.` });
     intensified = true;
   }
   return intensified;
@@ -835,11 +834,13 @@ function handleERC(recs, trace, target) {
     intensified = true;
   }
   
-  // CORRECCIÓN DE BUG: Solo sugiere añadir GLP-1 (2ª línea en ERC) si el paciente YA toma iSGLT-2 (1ª línea), 
-  // o si el iSGLT-2 está contraindicado por un FG menor de 20.
   if (state.hba1c > target.upperBound && (tieneSGLT2 || state.fge < 20) && !hasClass('arglp') && !hasClass('argip')) {
-    recs.push({ type: 'add', tag: '2ª línea', title: 'Se recomienda añadir arGLP-1', body: `Especialmente la semaglutida (respaldada por el estudio FLOW) por su fuerte protección renal adicional al SGLT2.` });
-    intensified = true;
+    if (state.fge >= 15) {
+      recs.push({ type: 'add', tag: '2ª línea', title: 'Se recomienda añadir arGLP-1', body: `Especialmente la semaglutida (respaldada por el estudio FLOW) por su fuerte protección renal adicional al SGLT2 (Nota 9 del algoritmo: se pueden prescribir si FG ≥ 15 ml/min).` });
+      intensified = true;
+    } else {
+      trace.push('FGe < 15 ml/min impide uso de arGLP-1 en segunda línea. Se delega el control a las opciones de pre-diálisis.');
+    }
   }
   return intensified;
 }
@@ -848,12 +849,16 @@ function handleObesidad(recs, trace, target) {
   let intensified = false;
   const tieneIncretina = hasClass('arglp') || hasClass('argip');
   if (!tieneIncretina) {
-    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar arGLP-1 o arGIP/GLP-1', body: `Opción mandatoria de primer escalón para pacientes obesos por las drásticas pérdidas de peso obtenidas (10-20%).` });
-    intensified = true;
+    if(state.fge >= 15) {
+      recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar arGLP-1 o arGIP/GLP-1', body: `Opción mandatoria de primer escalón para pacientes obesos por las drásticas pérdidas de peso obtenidas (10-20%).` });
+      intensified = true;
+    }
   }
   if (state.hba1c > target.upperBound && tieneIncretina && !hasClass('isglt2')) {
-    recs.push({ type: 'add', tag: 'Intensificar', title: 'Se recomienda asociar un iSGLT-2', body: `Añadir a la incretina como mecanismo de rescate oral para controlar la glucemia y aportar una discreta sinergia ponderal.` });
-    intensified = true;
+    if(state.fge >= 20) {
+      recs.push({ type: 'add', tag: 'Intensificar', title: 'Se recomienda asociar un iSGLT-2', body: `Añadir a la incretina como mecanismo de rescate oral para controlar la glucemia y aportar una discreta sinergia ponderal.` });
+      intensified = true;
+    }
   }
   return intensified;
 }
@@ -863,12 +868,12 @@ function handleHepatica(recs, trace, target) {
   const tieneIncretina = hasClass('arglp') || hasClass('argip');
   
   if (!tieneIncretina) {
-    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar arGLP-1 o arGIP/GLP-1', body: `Indicados en hígado graso metabólico por la demostrada reversión histológica de la esteatohepatitis.` });
-    intensified = true;
+    if(state.fge >= 15) {
+      recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar arGLP-1 o arGIP/GLP-1', body: `Indicados en hígado graso metabólico por la demostrada reversión histológica de la esteatohepatitis.` });
+      intensified = true;
+    }
   }
   
-  // CORRECCIÓN DE BUG: Se bloquea esta recomendación (2º escalón) hasta que el paciente YA esté en tratamiento 
-  // con la 1ª línea de incretinas (tieneIncretina === true), respetando los pasos temporales marcados por la guía.
   if (state.hba1c > target.upperBound && tieneIncretina && !hasClass('isglt2') && !state.drugs.pioglitazona) {
     recs.push({ type: 'add', tag: 'Intensificar (2º Escalón)', title: 'Se recomienda añadir iSGLT-2 o Pioglitazona', body: `Si el control glucémico fracasa a pesar de la terapia incretínica de base, el iSGLT-2 y la Pioglitazona (ambos con beneficios hepáticos avalados) son las intensificaciones de elección.` });
     intensified = true;
@@ -892,17 +897,20 @@ function applyGeneralIntensification(recs, trace, target) {
   const availableADNIs = getAvailableADNIs(state);
   let optionsText = '';
   if (availableADNIs.length > 0) {
-    optionsText = `<br><br>Para este paso de intensificación, las <strong>únicas familias farmacológicas (ADNIs) compatibles y seguras</strong> para su perfil (y que aún no toma) son:<ul><li>` + availableADNIs.join('</li><li>') + `</li></ul><em>Debe seleccionar una de ellas valorando sus efectos sobre el peso, riesgo de hipoglucemias y preferencias del paciente.</em>`;
+    optionsText = `<br><br>Para este paso de intensificación, las <strong>únicas familias farmacológicas (ADNIs) compatibles y seguras</strong> para su perfil renal y clínico actual (y que aún no toma) son:<ul><li>` + availableADNIs.join('</li><li>') + `</li></ul><em>Debe seleccionar una de ellas valorando sus preferencias y nivel de adherencia.</em>`;
   } else {
-    optionsText = `<br><br><strong>Aviso Crítico:</strong> No quedan más familias de fármacos orales ni incretínicos (ADNIs) seguras o clínicamente compatibles para añadir a la pauta de este paciente.`;
+    optionsText = `<br><br><strong>Aviso Crítico:</strong> No quedan más familias de fármacos orales ni incretínicos (ADNIs) seguras o clínicamente compatibles con su Filtrado Glomerular para añadir a su pauta. Considere insulinización directa.`;
   }
 
   if (clasesUsadas === 0) {
     if (state.hba1c >= 8.5) {
       if (state.fge >= 30) {
-          recs.push({ type: 'add', tag: 'Inicio Intensivo', title: 'Se recomienda iniciar con Doble Terapia', body: `Al tratarse de un paciente sin tratamiento previo pero con una HbA1c altísima (≥ 8,5 %), el algoritmo prohíbe empezar con monoterapia para evitar inercia terapéutica. Se debe iniciar directamente combinando la <strong>Metformina</strong> con un fármaco de alta potencia (iSGLT-2, arGLP-1 o arGIP/GLP-1).` });
+          recs.push({ type: 'add', tag: 'Inicio Intensivo', title: 'Se recomienda iniciar con Doble Terapia', body: `Al tratarse de un paciente sin tratamiento previo pero con una HbA1c altísima (≥ 8,5 %), el algoritmo prohíbe empezar con monoterapia. Inicie directamente combinando <strong>Metformina</strong> con un fármaco de alta potencia (iSGLT-2, arGLP-1 o arGIP/GLP-1).` });
       } else {
-          recs.push({ type: 'add', tag: 'Inicio Intensivo', title: 'Se recomienda iniciar con Incretinas / iDPP-4', body: `Al presentar HbA1c altísima (≥ 8,5 %) y un FGe < 30 (que contraindica la Metformina), debe evaluarse el inicio cuidadoso de terapias compatibles con su función renal o insulinización directa.` });
+          let textOpciones = `un <strong>iDPP-4</strong> (ajustando la dosis por ERC)`;
+          if (state.fge >= 15) textOpciones += ` o un <strong>arGLP-1</strong>`;
+          
+          recs.push({ type: 'add', tag: 'Inicio Intensivo', title: 'Se recomienda iniciar Monoterapia Segura Renal / Insulina', body: `Al presentar HbA1c altísima (≥ 8,5 %) y un FGe < 30 (que contraindica la Metformina), debe evaluarse el inicio cuidadoso de terapias limitadas por función renal (${textOpciones}) o insulinización basal transitoria.` });
       }
       trace.push('Paciente sin tratamiento y HbA1c >= 8.5: Inicio inmediato con doble terapia o insulina según FGe.');
     } else if (state.hba1c > target.upperBound) {
@@ -910,7 +918,10 @@ function applyGeneralIntensification(recs, trace, target) {
         recs.push({ type: 'add', tag: 'Inicio', title: 'Se recomienda iniciar tratamiento con Metformina', body: `En un paciente virgen de tratamiento y sin condicionantes clínicos predominantes, la estrategia universal marca iniciar <strong>Metformina</strong> como base. Titule la dosis progresivamente para mejorar la tolerabilidad gástrica.` });
         trace.push('Paciente sin tratamiento y HbA1c fuera de objetivo: Inicio con Metformina.');
       } else {
-        recs.push({ type: 'add', tag: 'Inicio', title: 'Se recomienda iniciar Monoterapia (alternativa a Metformina)', body: `La Metformina está contraindicada por el bajo filtrado glomerular actual. Se recomienda iniciar con un <strong>iDPP-4</strong> (por su probada seguridad en ERC) o un <strong>arGLP-1</strong> si la función renal aún lo permite.` });
+        let textOpciones = `un <strong>iDPP-4</strong> (por su probada seguridad en ERC)`;
+        if (state.fge >= 15) textOpciones += ` o un <strong>arGLP-1</strong>`;
+
+        recs.push({ type: 'add', tag: 'Inicio', title: 'Se recomienda iniciar Monoterapia (alternativa a Metformina)', body: `La Metformina está contraindicada por el bajo filtrado glomerular actual. Se recomienda iniciar con ${textOpciones}.` });
       }
     }
     return;
@@ -924,7 +935,7 @@ function applyGeneralIntensification(recs, trace, target) {
       recs.push({ type: 'add', tag: 'Intensificar a Triple', title: 'Se recomienda progresar a Triple Terapia', body: `La doble terapia actual ha sido superada por la alta glucotoxicidad. Está indicado añadir un tercer fármaco oral/incretina (3er ADNI).${optionsText}` });
       trace.push(`Intensificación: HbA1c ≥ 8.5, instauración de triple terapia ADNI.`);
     } else {
-      recs.push({ type: 'add', tag: 'Paso Estratégico', title: 'Se recomienda añadir un 4º ADNI o valorar el inicio directo de Insulina Basal', body: `El paciente presenta un control sumamente deficiente (${state.hba1c.toFixed(1)} %) a pesar de que ya se le administran ${clasesUsadas} fármacos simultáneos. El algoritmo marca una doble opción:<br><br>1. <strong>Añadir un cuarto fármaco (4º ADNI)</strong>, si el paciente se niega a inyectables o si se confía en la potencia de la familia añadida.<br>2. <strong>Incio de Insulinización Basal</strong>. Ante este nivel extremo tras múltiples fracasos terapéuticos, es altamente probable un fracaso pancreático, siendo la insulina el único rescate realista.${optionsText}` });
+      recs.push({ type: 'add', tag: 'Paso Estratégico', title: 'Se recomienda añadir un 4º ADNI o valorar el inicio directo de Insulina Basal', body: `El paciente presenta un control sumamente deficiente (${state.hba1c.toFixed(1)} %) a pesar de que ya se le administran ${clasesUsadas} fármacos simultáneos. Ante este nivel extremo es altamente probable un fracaso pancreático, siendo la insulina el único rescate realista.${optionsText}` });
       trace.push(`HbA1c extrema con 3+ fármacos: Opción abierta entre 4º ADNI de rescate o paso directo a Insulinización.`);
     }
   } 
@@ -934,7 +945,7 @@ function applyGeneralIntensification(recs, trace, target) {
     } else if (clasesUsadas === 2) {
       recs.push({ type: 'add', tag: 'Progresión', title: 'Se recomienda instaurar Triple Terapia', body: `La combinación actual es insuficiente para alcanzar la meta. Está indicado sumar una tercera familia farmacológica.${optionsText}` });
     } else {
-      recs.push({ type: 'add', tag: 'Núcleo del Algoritmo', title: 'Se recomienda añadir un 4º ADNI o iniciar Insulina Basal', body: `Al fracasar ${clasesUsadas} familias farmacológicas, el paciente entra en la fase central (y más restrictiva) del algoritmo. Debe valorar el perfil particular del paciente para decidir entre intentar asociar un <strong>cuarto fármaco (ADNI)</strong> o bien dar paso a una pauta de <strong>Insulina Basal</strong>.${optionsText}` });
+      recs.push({ type: 'add', tag: 'Núcleo del Algoritmo', title: 'Se recomienda añadir un 4º ADNI o iniciar Insulina Basal', body: `Al fracasar ${clasesUsadas} familias farmacológicas, el paciente entra en la fase central (y más restrictiva) del algoritmo. Debe valorar el perfil del paciente para decidir entre intentar asociar un <strong>cuarto fármaco (ADNI)</strong> o dar paso a <strong>Insulina Basal</strong>.${optionsText}` });
       trace.push(`Intensificación progresiva: Fracaso a 3 fármacos. Habilitadas las opciones de 4º ADNI (si disponibles) e Insulina.`);
     }
   }
@@ -973,7 +984,9 @@ function update() {
   state.ic = document.getElementById('ic').checked;
   state.ecv = document.getElementById('ecv').checked;
   state.rcvAlto = document.getElementById('rcvAlto').checked;
-  state.erc = document.getElementById('erc').checked;
+  
+  state.erc = state.fge < 60; 
+  
   state.obesidad = document.getElementById('obesidad').checked;
   state.hepatica = document.getElementById('hepatica').checked;
   state.fragilidad = document.getElementById('fragilidad').checked;
@@ -1001,6 +1014,18 @@ function update() {
   document.querySelectorAll('.check').forEach(c => { const id = c.dataset.check; if (id) c.classList.toggle('checked', state[id] === true); });
   document.querySelectorAll('.radio-pill').forEach(p => { const input = p.querySelector('input'); p.classList.toggle('selected', input.checked); });
   document.querySelectorAll('.drug-class').forEach(dc => { const cls = dc.dataset.drugclass; dc.classList.toggle('has-active', hasClass(cls)); });
+
+  // AVISOS VISUALES BASADOS EN TFG (Sin bloqueo físico)
+  const fgeHint = document.getElementById('fgeHint');
+  if (state.fge < 30) {
+      fgeHint.innerHTML = '<span style="color:var(--danger); font-weight:600;">Metformina contraindicada. iSGLT-2 no iniciar.</span>';
+  } else if (state.fge < 45) {
+      fgeHint.innerHTML = '<span style="color:var(--warn); font-weight:600;">Reducir dosis de Metformina al 50%.</span>';
+  } else if (state.fge < 60) {
+      fgeHint.innerHTML = '<span style="color:var(--evidence); font-weight:600;">FGe marca ERC automáticamente.</span>';
+  } else {
+      fgeHint.innerHTML = '';
+  }
 
   const cond = getConditioner();
   const target = getTarget();
