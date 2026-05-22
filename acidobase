@@ -325,7 +325,7 @@
           <input type="checkbox" id="sintomatico">
           <span class="check-body">
             <span class="check-label">Síntomas cardinales</span>
-            <span class="check-desc">Poliuria, polidipsia, pérdida de peso no explicable</span>
+            <span class="check-desc">Poliuria, polidipsia, pérdida de peso, catabolismo</span>
           </span>
         </label>
       </div>
@@ -777,15 +777,16 @@ function generateRecs(cond, target) {
 
   const hasCriticalConflict = detectIncompatibilities(recs, trace);
 
+  // MANEJO DEL DESCONTROL SEVERO SINTOMÁTICO (Clínica Cardinal)
   if (state.sintomatico && state.hba1c >= 8.5) {
     if (state.cirrosis) {
       recs.push({ type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulinización Basal', body: `Ante clínica cardinal grave con HbA1c ≥ 8,5 % en paciente con cirrosis, la única opción segura para el rescate agudo es la <strong>Insulina Basal</strong>.` });
       trace.push('Descompensación sintomática + Cirrosis: Insulinización aislada recomendada.');
     } else if (state.fge >= 30) {
-      recs.push({ type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulina Basal + Metformina', body: `Ante clínica cardinal grave con HbA1c ≥ 8,5 %, se debe iniciar inmediatamente <strong>Insulina Basal combinada con Metformina</strong> para frenar la glucotoxicidad.` });
+      recs.push({ type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulina Basal + Metformina', body: `Ante clínica cardinal grave o signos de catabolismo con HbA1c ≥ 8,5 %, se debe iniciar inmediatamente <strong>Insulina Basal combinada con Metformina</strong> para frenar la glucotoxicidad de forma aguda.` });
       trace.push('Descompensación grave sintomática (FGe ≥ 30): Insulinización + Metformina.');
     } else {
-      recs.push({ type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulina Basal en monoterapia', body: `Ante clínica cardinal grave con HbA1c ≥ 8,5 % y <strong>FGe &lt; 30 ml/min</strong> (Metformina contraindicada), se debe iniciar <strong>Insulina Basal en monoterapia</strong> para frenar la glucotoxicidad. Tras la estabilización, valore asociar un <strong>iDPP-4</strong> con dosis ajustada al filtrado.` });
+      recs.push({ type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulina Basal en monoterapia', body: `Ante clínica cardinal grave con HbA1c ≥ 8,5 % y <strong>FGe &lt; 30 ml/min</strong> (Metformina contraindicada), se debe iniciar <strong>Insulina Basal en monoterapia</strong> para frenar la glucotoxicidad. Tras la estabilización, valore asociar un iDPP-4.` });
       trace.push('Descompensación grave sintomática (FGe < 30): Insulinización aislada por contraindicación de Metformina.');
     }
     conditionHandledIntensification = true; 
@@ -804,6 +805,7 @@ function generateRecs(cond, target) {
   else if (cond.id === 'hepatica') { conditionHandledIntensification = handleHepatica(recs, trace, target) || conditionHandledIntensification; }
   else if (cond.id === 'fragilidad') { conditionHandledIntensification = handleFragilidad(recs, trace, target) || conditionHandledIntensification; }
 
+  // APLICACIÓN DE INTENSIFICACIÓN GENERAL (Sólo si no se ha resuelto ya y el paciente está fuera de objetivo)
   if (cond.id === null || (state.hba1c > target.upperBound && !conditionHandledIntensification && cond.id !== 'fragilidad' && !state.sintomatico)) {
       if (cond.id !== null) trace.push('Fármacos del condicionante optimizados pero paciente sigue fuera de objetivo -> Se aplica intensificación escalonada.');
       applyGeneralIntensification(recs, trace, target, hasCriticalConflict);
@@ -1019,66 +1021,80 @@ function handleFragilidad(recs, trace, target) {
 
 function applyGeneralIntensification(recs, trace, target, hasCriticalConflict) {
   const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'].filter(c => hasClass(c)).length;
-  
   const availableADNIs = getAvailableADNIs(state);
+  
   let optionsText = '';
   if (availableADNIs.length > 0) {
-    optionsText = `<br><br>Para este paso, las <strong>únicas familias farmacológicas (ADNIs) compatibles y seguras</strong> para su perfil orgánico actual (y que aún no toma) son:<ul><li>` + availableADNIs.join('</li><li>') + `</li></ul><em>Debe seleccionar una de ellas valorando sus preferencias y nivel de adherencia.</em>`;
+    optionsText = `<br><br>Familias compatibles y seguras sugeridas:<ul><li>` + availableADNIs.join('</li><li>') + `</li></ul>`;
   } else {
-    optionsText = `<br><br><strong>Aviso Crítico:</strong> No quedan más familias de fármacos orales ni incretínicos (ADNIs) seguras o clínicamente compatibles con sus condicionantes. Considere insulinización directa.`;
+    optionsText = `<br><br><strong>Aviso Crítico:</strong> No quedan más familias de fármacos orales ni incretínicos seguras. Considere insulinización directa.`;
   }
 
   if (hasCriticalConflict) {
-    recs.push({ type: 'add', tag: 'Reestructuración', title: 'Se requiere Reestructuración Terapéutica', body: `Dado que es obligatorio suspender o retirar parte de su tratamiento actual por motivos de seguridad médica (riesgo grave detectado), no procede aplicar una intensificación escalonada clásica. Debe sustituir los fármacos retirados por opciones seguras para tratar de alcanzar la meta glucémica.${optionsText}` });
+    recs.push({ type: 'add', tag: 'Reestructuración', title: 'Se requiere Reestructuración Terapéutica', body: `Es obligatorio suspender o retirar parte de su tratamiento actual por motivos de seguridad médica. Sustituya los fármacos retirados por opciones seguras para tratar de alcanzar la meta.${optionsText}` });
     trace.push('Intensificación bloqueada: Se requiere reestructuración previa por conflictos graves.');
     return;
   }
 
-  if (clasesUsadas === 0) {
-    if (state.hba1c >= 8.5) {
-      if (state.fge >= 30) {
-          recs.push({ type: 'add', tag: 'Inicio Intensivo', title: 'Se recomienda iniciar con Doble Terapia', body: `Al tratarse de un paciente sin tratamiento previo pero con una HbA1c altísima (≥ 8,5 %), el algoritmo prohíbe empezar con monoterapia. Inicie directamente combinando <strong>Metformina</strong> con un fármaco de alta potencia (iSGLT-2, arGLP-1 o arGIP/GLP-1).` });
-      } else {
-          let textOpciones = `un <strong>iDPP-4</strong> (ajustando la dosis por ERC)`;
-          if (state.fge >= 15) textOpciones += ` o un <strong>arGLP-1</strong>`;
-          
-          recs.push({ type: 'add', tag: 'Inicio Intensivo', title: 'Se recomienda iniciar Monoterapia Segura / Insulina', body: `Al presentar HbA1c altísima (≥ 8,5 %) y un FGe < 30 (que contraindica la Metformina), debe evaluarse el inicio cuidadoso de terapias limitadas por función renal (${textOpciones}) o insulinización basal transitoria.` });
-      }
-      trace.push('Paciente sin tratamiento y HbA1c >= 8.5: Inicio inmediato con doble terapia o insulina según FGe.');
-    } else if (state.hba1c > target.upperBound) {
-      if (state.fge >= 30) {
-        recs.push({ type: 'add', tag: 'Inicio', title: 'Se recomienda iniciar tratamiento con Metformina', body: `En un paciente virgen de tratamiento y sin condicionantes clínicos predominantes graves, la estrategia universal marca iniciar <strong>Metformina</strong> como base y potenciar los cambios en el estilo de vida. Titule la dosis progresivamente para mejorar la tolerabilidad gástrica.` });
-        trace.push('Paciente sin tratamiento y HbA1c fuera de objetivo: Inicio con Metformina.');
-      } else {
-        let textOpciones = `un <strong>iDPP-4</strong> (por su probada seguridad en ERC)`;
-        if (state.fge >= 15) textOpciones += ` o un <strong>arGLP-1</strong>`;
-
-        recs.push({ type: 'add', tag: 'Inicio', title: 'Se recomienda iniciar Monoterapia (alternativa a Metformina)', body: `La Metformina está contraindicada por el bajo filtrado glomerular actual. Se recomienda iniciar con ${textOpciones}.` });
-      }
+  // ZONA GRIS: ADA vs redGDPS (>10% asintomático)
+  if (state.hba1c > 10.0) {
+    let opcionA = '';
+    if (clasesUsadas === 0) {
+      opcionA = state.fge >= 30 ? 'Iniciar Doble Terapia combinando Metformina con un fármaco de muy alta eficacia (idealmente arGLP-1 o arGIP/GLP-1).' : 'Iniciar terapia combinada segura para ERC (Metformina contraindicada).';
+    } else {
+      opcionA = 'Intensificar esquema actual hacia Triple/Cuádruple terapia agotando vías de muy alta eficacia (ej. arGLP-1/arGIP o iSGLT-2) si aún no los toma.';
     }
+    
+    let opcionB = state.fge >= 30 ? 'Iniciar Insulina Basal (+ Metformina).' : 'Iniciar Insulina Basal en monoterapia (Metformina contraindicada por FGe < 30).';
+
+    recs.push({
+      type: 'warn', tag: 'Bifurcación Terapéutica', title: 'Decisión Compartida: redGDPS vs ADA 2026 (HbA1c > 10 %)',
+      body: `La ADA recomienda valorar insulina basal transitoria para vencer la glucotoxicidad severa, mientras que la redGDPS permite intentar un rescate no insulínico al no haber clínica cardinal o signos de catabolismo. Elija según el perfil del paciente:<br><br>
+      <ul style="margin-top:0;">
+        <li style="margin-bottom:8px;"><strong>Opción A (Vía No Insulínica de Alta Potencia):</strong> ${opcionA} <em>Condición: Requiere asegurar adherencia y reevaluar estrictamente en 2-4 semanas. Si no hay descenso drástico basal, pasar a Opción B.</em></li>
+        <li><strong>Opción B (Rescate Insulínico Transitorio):</strong> ${opcionB} <em>Ventaja: Elimina rápidamente la glucotoxicidad. Una vez estabilizado (< 8 %), se puede retirar la insulina y cambiar a esquema ADNI.</em></li>
+      </ul>`
+    });
+    trace.push('HbA1c > 10% asintomático: Se presenta Bifurcación Terapéutica (Insulina transitoria vs Alta Potencia).');
     return;
   }
 
-  if (state.hba1c >= 8.5) {
-    if (clasesUsadas === 1) {
-      recs.push({ type: 'add', tag: 'Intensificación', title: 'Se recomienda instaurar Doble Terapia inicial', body: `Al presentar una HbA1c altísima (≥ 8,5 %), el algoritmo ordena no demorar el abordaje escalonado clásico. Se debe añadir inmediatamente a su base actual un fármaco de alta potencia.${optionsText}` });
-      trace.push(`Intensificación agresiva: HbA1c ≥ 8.5, salto a doble terapia.`);
+  // DESCONTROL GRAVE: redGDPS pura (8.5 - 10.0 asintomático)
+  if (state.hba1c >= 8.5 && state.hba1c <= 10.0) {
+    if (clasesUsadas === 0) {
+      if (state.fge >= 30) {
+        recs.push({ type: 'add', tag: 'Inicio Intensivo (redGDPS)', title: 'Se recomienda iniciar con Doble Terapia', body: `Al presentar HbA1c ≥ 8,5 % asintomática, el algoritmo ordena <strong>no empezar con monoterapia</strong>. Inicie directamente combinando <strong>Metformina</strong> con un segundo ADNI de alta potencia (iSGLT-2 o incretinas). La insulina queda reservada para casos sintomáticos.` });
+      } else {
+        recs.push({ type: 'add', tag: 'Inicio Intensivo Seguro', title: 'Se recomienda Doble Terapia ajustada al FG', body: `Con HbA1c ≥ 8,5 % asintomática se requiere Doble Terapia inicial, pero la Metformina está contraindicada. Se recomienda asociar fármacos seguros según FG (ej. iDPP-4 + arGLP-1 si FG≥15).` });
+      }
+      trace.push('HbA1c 8.5-10.0 asintomático virgen: Inicio obligatorio con Doble terapia.');
+    } else if (clasesUsadas === 1) {
+      recs.push({ type: 'add', tag: 'Intensificación Rápida', title: 'Se recomienda progresar a Triple Terapia (redGDPS)', body: `Ante un descontrol grave (HbA1c ≥ 8,5 %) asintomático, el algoritmo redGDPS insta a intensificar enérgicamente añadiendo un segundo ADNI a su base actual para vencer el descontrol, posponiendo la insulina basal exclusivamente para casos que desarrollen síntomas cardinales.${optionsText}` });
+      trace.push('HbA1c 8.5-10.0 asintomático (1 fármaco): Salto a triple terapia sugerido.');
     } else if (clasesUsadas === 2) {
-      recs.push({ type: 'add', tag: 'Intensificar a Triple', title: 'Se recomienda progresar a Triple Terapia', body: `La doble terapia actual ha sido superada por la alta glucotoxicidad. Está indicado añadir un tercer fármaco oral/incretina (3er ADNI).${optionsText}` });
-      trace.push(`Intensificación: HbA1c ≥ 8.5, instauración de triple terapia ADNI.`);
+      recs.push({ type: 'add', tag: 'Intensificar a Triple/Cuádruple', title: 'Se recomienda progresar con 3º o 4º ADNI', body: `El descontrol grave persiste sin clínica cardinal. La redGDPS mantiene la indicación de exprimir terapias no insulínicas de alta potencia antes de insulinizar.${optionsText}` });
+      trace.push('HbA1c 8.5-10.0 asintomático (2 fármacos): Cuádruple terapia sugerida.');
     } else {
-      recs.push({ type: 'add', tag: 'Paso Estratégico', title: 'Se recomienda añadir un 4º ADNI o valorar el inicio directo de Insulina Basal', body: `El paciente presenta un control sumamente deficiente (${state.hba1c.toFixed(1)} %) a pesar de que ya se le administran ${clasesUsadas} fármacos simultáneos. Ante este nivel extremo es altamente probable un fracaso pancreático, siendo la insulina el único rescate realista.${optionsText}` });
-      trace.push(`HbA1c extrema con 3+ fármacos: Opción abierta entre 4º ADNI de rescate o paso directo a Insulinización.`);
+      recs.push({ type: 'add', tag: 'Paso Estratégico', title: 'Se recomienda valorar Insulina Basal o 4º ADNI', body: `El paciente presenta un control sumamente deficiente (${state.hba1c.toFixed(1)} %) a pesar de estar polimedicado (${clasesUsadas} fármacos). Es altamente probable un fracaso pancreático. Si ya recibe incretinas/SGLT2, la insulina basal es el rescate más realista.${optionsText}` });
+      trace.push('HbA1c 8.5-10.0 asintomático (3+ fármacos): Valorar insulina por probable agotamiento pancreático.');
     }
+    return;
   } 
-  else if (state.hba1c > target.upperBound) {
-    if (clasesUsadas === 1) {
+
+  // DESCONTROL MODERADO (HbA1c > objetivo pero < 8.5)
+  if (state.hba1c > target.upperBound) {
+    if (clasesUsadas === 0) {
+      if (state.fge >= 30) {
+        recs.push({ type: 'add', tag: 'Inicio', title: 'Se recomienda iniciar tratamiento con Metformina', body: `En un paciente virgen de tratamiento, la estrategia universal marca iniciar <strong>Metformina</strong> como base y potenciar los cambios en el estilo de vida.` });
+      } else {
+        recs.push({ type: 'add', tag: 'Inicio', title: 'Se recomienda iniciar Monoterapia (alternativa a Metformina)', body: `La Metformina está contraindicada por el bajo filtrado glomerular actual. Se recomienda iniciar con alternativas seguras como iDPP-4 o arGLP-1 (según FG).` });
+      }
+    } else if (clasesUsadas === 1) {
       recs.push({ type: 'add', tag: 'Progresión', title: 'Se recomienda asociar un segundo fármaco', body: `Para limar la diferencia hasta alcanzar el objetivo, se recomienda añadir un segundo fármaco complementario a la pauta actual.${optionsText}` });
     } else if (clasesUsadas === 2) {
       recs.push({ type: 'add', tag: 'Progresión', title: 'Se recomienda instaurar Triple Terapia', body: `La combinación actual es insuficiente para alcanzar la meta. Está indicado sumar una tercera familia farmacológica.${optionsText}` });
     } else {
       recs.push({ type: 'add', tag: 'Núcleo del Algoritmo', title: 'Se recomienda añadir un 4º ADNI o iniciar Insulina Basal', body: `Al fracasar ${clasesUsadas} familias farmacológicas, el paciente entra en la fase central (y más restrictiva) del algoritmo. Debe valorar el perfil del paciente para decidir entre intentar asociar un <strong>cuarto fármaco (ADNI)</strong> o dar paso a <strong>Insulina Basal</strong>.${optionsText}` });
-      trace.push(`Intensificación progresiva: Fracaso a 3 fármacos. Habilitadas las opciones de 4º ADNI (si disponibles) e Insulina.`);
     }
   }
 }
