@@ -338,7 +338,7 @@
           <input type="checkbox" id="cirrosis">
           <span class="check-body">
             <span class="check-label">Cirrosis / Insuf. Hepática <span class="ev-badge">Evidencia</span></span>
-            <span class="check-desc">Child-Pugh B o C. Altera el metabolismo de los fármacos.</span>
+            <span class="check-desc">Child-Pugh B o C. Altera metabolismo de fármacos.</span>
           </span>
         </label>
         <label class="check evidence" data-check="ictus">
@@ -359,7 +359,7 @@
           <input type="checkbox" id="rcvAlto">
           <span class="check-body">
             <span class="check-label">RCV alto <span class="ev-badge">Evidencia</span></span>
-            <span class="check-desc">≥3 FRCV (HTA, dislipemia, tabaco, albuminuria, obesidad, AF precoz)</span>
+            <span class="check-desc">≥3 FRCV (HTA, dislipemia, tabaco, albuminuria, obesidad)</span>
           </span>
         </label>
         <label class="check evidence" data-check="ic">
@@ -405,7 +405,7 @@
           <input type="checkbox" id="deterioro">
           <span class="check-body">
             <span class="check-label">Deterioro cognitivo / limitación funcional</span>
-            <span class="check-desc">Marca automáticamente fragilidad moderada-grave (Objetivo 7,5-8,5%)</span>
+            <span class="check-desc">Marca automáticamente fragilidad moderada-grave</span>
           </span>
         </label>
       </div>
@@ -481,7 +481,7 @@
   <section class="panel output-panel" id="outputPanel">
     <div class="panel-header">
       <h2>Recomendación clínica</h2>
-      <span class="meta">redGDPS 2026</span>
+      <span class="meta">redGDPS 2026 & ADA</span>
     </div>
 
     <div class="summary">
@@ -526,13 +526,13 @@
 </main>
 
 <footer>
-  Herramienta de soporte clínico basada en el <span class="ref">Algoritmo de tratamiento de la DM2 · redGDPS 2026 y ADA 2026</span>. 
-  Esta aplicación es una ayuda; no sustituye al juicio clínico ni a la lectura íntegra del documento original. Verifique siempre indicaciones, contraindicaciones y financiación vigente antes de prescribir.
+  Herramienta de soporte clínico basada en el <span class="ref">Algoritmo de tratamiento de la DM2 · redGDPS 2026 y consensos ADA/EASD</span>. 
+  Esta aplicación es una ayuda; no sustituye al juicio clínico ni a la lectura íntegra de los documentos originales. Verifique siempre indicaciones, contraindicaciones y financiación vigente antes de prescribir.
 </footer>
 
 <script>
 /* =================================================================
-   Algoritmo redGDPS 2026 - Lógica clínica estructurada y razonada
+   Algoritmo redGDPS 2026 y ADA - Lógica clínica estructurada y razonada
    ================================================================= */
 
 const state = {
@@ -573,7 +573,7 @@ function getConditioner() {
   if (state.ecvCoronaria || state.rcvAlto) { const label = state.ecvCoronaria ? 'ECV Coronaria / Periférica' : 'RCV elevado'; return { id: 'ecvCoronaria', name: label, meta: 'iSGLT-2 o arGLP-1 o arGIP-GLP-1 (con o sin Metformina)' }; }
   if (state.ic) return { id: 'ic', name: 'Insuficiencia cardíaca', meta: 'iSGLT-2 (con o sin Met) → arGLP-1 o arGIP-GLP-1' };
   if (state.erc) return { id: 'erc', name: 'Enfermedad renal crónica', meta: 'iSGLT-2 (si FGe ≥20) → arGLP-1 (preferible semaglutida)' };
-  if (state.obesidad) return { id: 'obesidad', name: 'Obesidad', meta: 'arGIP-GLP-1 o arGLP-1 + Met → iSGLT-2' };
+  if (state.obesidad) return { id: 'obesidad', name: 'Obesidad', meta: 'Manejo del peso y glucemia (GLP-1 preferentes o Metformina)' };
   if (state.hepatica) return { id: 'hepatica', name: 'Enfermedad hepática metabólica', meta: 'arGIP-GLP-1 o arGLP-1 → iSGLT-2 o Pioglitazona' };
   if (state.fragilidad) {
     const nameFrag = state.fragGrade === 'muyGrave' ? 'Muy grave / Vida limitada' : 'Moderada - Grave';
@@ -592,7 +592,7 @@ function getTarget() {
     return { target: 8.5, label: '7,5 - 8,5 %', rationale: 'Fragilidad moderada-grave (deterioro cognitivo/funcional). Especial precaución ante hipoglucemias.', upperBound: 8.5 };
   }
   
-  // LOGICA ESTRATIFICADA SEGÚN CSV (OPENEVIDENCE TABLE)
+  // LOGICA ESTRATIFICADA (OPENEVIDENCE TABLE)
   if (!state.fragilidad && sinComplicaciones) {
     if (state.edad <= 40 && state.tiempoDx <= 5) {
         return { target: 6.5, label: '≤ 6,5 %', rationale: 'Adulto joven (≤ 40 años) con diagnóstico reciente (≤ 5 años) y sin comorbilidades: objetivo estricto (memoria metabólica).', upperBound: 6.5 };
@@ -763,7 +763,7 @@ function renderOptimizedState(cond, state, target) {
       justificacion += `<li><strong>Eficacia y Tolerabilidad:</strong> El paciente no presenta complicaciones mayores, logrando un excelente control metabólico mantenido a lo largo del tiempo.</li>`;
     }
 
-    justificacion += `</ul><br><strong>Conducta a seguir:</strong> No proceden cambios farmacológicos en este momento. Se recomienda mantener el esquema vigente y citar al paciente para su control clínico rutinario (revisión de HbA1c, FGe, cociente albúmina/creatinina y peso).`;
+    justificacion += `</ul><br><strong>Conducta a seguir:</strong> No proceden cambios farmacológicos en este momento. Se recomienda mantener el esquema vigente y citar al paciente para su control clínico rutinario.`;
     
     return justificacion;
 }
@@ -869,7 +869,6 @@ function handleIctus(recs, trace, target) {
   
   if (!state.drugs.metformina && state.fge >= 30 && state.hba1c > target.upperBound) {
     recs.push({ type: 'info', tag: 'Sinergia', title: 'Considerar Metformina', body: `Se aconseja acompañar de Metformina por su efecto glucémico complementario y bajo coste, ya que la evidencia de cardioprotección se generó mayoritariamente en combinación con ella, aunque las guías permiten iniciar protección vascular independientemente de la HbA1c.` });
-    // No marcamos intensified = true para no bloquear si ya lleva el GLP-1 y solo queremos sugerir la metformina como optimizador suave.
   } else if (!state.drugs.metformina && state.fge >= 30 && state.hba1c <= target.upperBound && (tieneGLP || tienePio)) {
     recs.push({ type: 'info', tag: 'Metformina no prioritaria', title: 'No se precisa añadir Metformina', body: `El paciente ya alcanza su objetivo glucémico con el tratamiento actual. La protección cerebrovascular se mantiene sin necesidad de añadir Metformina.` });
   }
@@ -937,7 +936,6 @@ function handleERC(recs, trace, target) {
     intensified = true;
   }
   
-  // PARCHE METFORMINA TRANSVERSAL
   if (!state.drugs.metformina && state.fge >= 30 && state.hba1c > target.upperBound) {
     recs.push({ type: 'add', tag: 'Sinergia Basal', title: 'Se recomienda asociar Metformina', body: `Para optimizar el control glucémico, se recomienda añadir Metformina como base terapéutica complementaria (Nota 6 del algoritmo).` });
     intensified = true;
@@ -959,17 +957,19 @@ function handleObesidad(recs, trace, target) {
 
   if (!tieneIncretina) {
     if(state.fge >= 15) {
-      // MODO ESCALÓN OBESIDAD: Solo fuerza inyectable si ya tomaba base o debuta grave.
+      // Lógica Modo Escalón: 
       if (clasesUsadas > 0 || state.hba1c >= 8.0) {
         recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda asociar arGLP-1 o arGIP/GLP-1', body: `Para pacientes con obesidad que no logran control inicial o debutan muy descompensados, la terapia incretínica es prioritaria por las drásticas pérdidas de peso (10-20%) que atacan la resistencia a la insulina.` });
         intensified = true;
       } else {
+        recs.push({ type: 'ok', tag: 'Inicio Conservador', title: 'Iniciar Metformina + Dieta', body: `En pacientes con obesidad y descontrol glucémico leve/moderado (HbA1c < 8.0%), el pilar inicial sigue siendo la optimización del estilo de vida (dieta/ejercicio) junto con Metformina.` });
+        recs.push({ type: 'info', tag: 'Alternativa Premium', title: 'Considerar GLP-1 RA inicial (opcional)', body: `Si el paciente prioriza la pérdida de peso significativa y no existen barreras de acceso/financiación, las guías recientes (ADA/AACE) avalan el inicio temprano con arGLP-1 o Tirzepatida para abordar la enfermedad metabólica de raíz.` });
         trace.push('Paciente virgen con obesidad y descontrol leve/moderado (<8.0%). Se prioriza inicio con Metformina+Dieta antes de exigir inyectables de primera línea.');
+        intensified = true; 
       }
     }
   }
   
-  // PARCHE METFORMINA TRANSVERSAL
   if (tieneIncretina && !state.drugs.metformina && state.fge >= 30 && state.hba1c > target.upperBound) {
     recs.push({ type: 'add', tag: 'Sinergia Basal', title: 'Se recomienda asociar Metformina', body: `Para optimizar el control glucémico de base, se recomienda añadir Metformina (Nota 6 del algoritmo).` });
     intensified = true;
@@ -995,7 +995,6 @@ function handleHepatica(recs, trace, target) {
     }
   }
   
-  // PARCHE METFORMINA TRANSVERSAL
   if (!state.drugs.metformina && state.fge >= 30 && !state.cirrosis && state.hba1c > target.upperBound) {
     recs.push({ type: 'add', tag: 'Sinergia Basal', title: 'Se recomienda asociar Metformina', body: `Para optimizar el control glucémico basal, se recomienda añadir Metformina (Nota 6 del algoritmo).` });
     intensified = true;
@@ -1029,7 +1028,6 @@ function applyGeneralIntensification(recs, trace, target, hasCriticalConflict) {
     optionsText = `<br><br><strong>Aviso Crítico:</strong> No quedan más familias de fármacos orales ni incretínicos (ADNIs) seguras o clínicamente compatibles con sus condicionantes. Considere insulinización directa.`;
   }
 
-  // REGLA: Si hay que suspender fármacos, no se intensifica, se reestructura.
   if (hasCriticalConflict) {
     recs.push({ type: 'add', tag: 'Reestructuración', title: 'Se requiere Reestructuración Terapéutica', body: `Dado que es obligatorio suspender o retirar parte de su tratamiento actual por motivos de seguridad médica (riesgo grave detectado), no procede aplicar una intensificación escalonada clásica. Debe sustituir los fármacos retirados por opciones seguras para tratar de alcanzar la meta glucémica.${optionsText}` });
     trace.push('Intensificación bloqueada: Se requiere reestructuración previa por conflictos graves.');
@@ -1150,7 +1148,6 @@ function update() {
   document.querySelectorAll('.radio-pill').forEach(p => { const input = p.querySelector('input'); p.classList.toggle('selected', input.checked); });
   document.querySelectorAll('.drug-class').forEach(dc => { const cls = dc.dataset.drugclass; dc.classList.toggle('has-active', hasClass(cls)); });
 
-  // AVISOS VISUALES BASADOS EN TFG (Sin bloqueo físico)
   const fgeHint = document.getElementById('fgeHint');
   if (state.fge < 30) {
       fgeHint.innerHTML = '<span style="color:var(--danger); font-weight:600;">Metformina contraindicada. iSGLT-2 no iniciar.</span>';
