@@ -341,11 +341,18 @@
             <span class="check-desc">Child-Pugh B o C. Altera el metabolismo de los fármacos.</span>
           </span>
         </label>
-        <label class="check evidence" data-check="ecv">
-          <input type="checkbox" id="ecv">
+        <label class="check evidence" data-check="ictus">
+          <input type="checkbox" id="ictus">
           <span class="check-body">
-            <span class="check-label">ECV establecida <span class="ev-badge">Evidencia</span></span>
-            <span class="check-desc">C. isquémica, ictus/AIT, EAP, ateromatosis significativa</span>
+            <span class="check-label">Enf. Cerebrovascular (Ictus) <span class="ev-badge">Evidencia</span></span>
+            <span class="check-desc">Infarto cerebral isquémico o AIT previo</span>
+          </span>
+        </label>
+        <label class="check evidence" data-check="ecvCoronaria">
+          <input type="checkbox" id="ecvCoronaria">
+          <span class="check-body">
+            <span class="check-label">ECV Coronaria / Periférica <span class="ev-badge">Evidencia</span></span>
+            <span class="check-desc">IAM, Angina, Enf. Arterial Periférica</span>
           </span>
         </label>
         <label class="check evidence" data-check="rcvAlto">
@@ -519,7 +526,7 @@
 </main>
 
 <footer>
-  Herramienta de soporte clínico basada en el <span class="ref">Algoritmo de tratamiento de la DM2 · redGDPS 2026</span> (García FJ, Artola S, Ávila L et al. <em>Diabetes Práctica</em> 2025;16(04):107-139). 
+  Herramienta de soporte clínico basada en el <span class="ref">Algoritmo de tratamiento de la DM2 · redGDPS 2026 y ADA 2026</span>. 
   Esta aplicación es una ayuda; no sustituye al juicio clínico ni a la lectura íntegra del documento original. Verifique siempre indicaciones, contraindicaciones y financiación vigente antes de prescribir.
 </footer>
 
@@ -530,7 +537,8 @@
 
 const state = {
   hba1c: 7.5, edad: 65, tiempoDx: 5, fge: 80,
-  sintomatico: false, cirrosis: false, ic: false, ecv: false, rcvAlto: false,
+  sintomatico: false, cirrosis: false, ic: false, 
+  ictus: false, ecvCoronaria: false, rcvAlto: false,
   erc: false, obesidad: false, hepatica: false, fragilidad: false, fragGrade: 'moderadaGrave', deterioro: false,
   drugs: {}
 };
@@ -561,7 +569,8 @@ function drugsInClass(cls) {
 
 function getConditioner() {
   if (state.cirrosis) return { id: 'cirrosis', name: 'Cirrosis / Insuficiencia Hepática Grave', meta: 'Manejo altamente especializado. Fármacos seguros: Insulina o Linagliptina.' };
-  if (state.ecv || state.rcvAlto) { const label = state.ecv ? 'ECV establecida' : 'RCV elevado'; return { id: 'ecv', name: label, meta: 'Metformina + (iSGLT-2 o arGLP-1 o arGIP-GLP-1)' }; }
+  if (state.ictus) return { id: 'ictus', name: 'Enfermedad Cerebrovascular (Ictus / AIT)', meta: 'Prevención secundaria: arGLP-1 preferente (o Pioglitazona)' };
+  if (state.ecvCoronaria || state.rcvAlto) { const label = state.ecvCoronaria ? 'ECV Coronaria / Periférica' : 'RCV elevado'; return { id: 'ecvCoronaria', name: label, meta: 'iSGLT-2 o arGLP-1 o arGIP-GLP-1 (con o sin Metformina)' }; }
   if (state.ic) return { id: 'ic', name: 'Insuficiencia cardíaca', meta: 'iSGLT-2 (con o sin Met) → arGLP-1 o arGIP-GLP-1' };
   if (state.erc) return { id: 'erc', name: 'Enfermedad renal crónica', meta: 'iSGLT-2 (si FGe ≥20) → arGLP-1 (preferible semaglutida)' };
   if (state.obesidad) return { id: 'obesidad', name: 'Obesidad', meta: 'arGIP-GLP-1 o arGLP-1 + Met → iSGLT-2' };
@@ -574,7 +583,7 @@ function getConditioner() {
 }
 
 function getTarget() {
-  const sinComplicaciones = !state.ic && !state.ecv && !state.erc && !state.hepatica && !state.rcvAlto && !state.cirrosis;
+  const sinComplicaciones = !state.ic && !state.ecvCoronaria && !state.ictus && !state.erc && !state.hepatica && !state.rcvAlto && !state.cirrosis;
   
   if (state.fragilidad && state.fragGrade === 'muyGrave') {
     return { target: null, label: 'Evitar síntomas', rationale: 'Fragilidad muy grave o esperanza de vida limitada. No hay objetivo numérico; se prioriza evitar síntomas hiper/hipoglucémicos.', upperBound: 9.0 };
@@ -583,7 +592,7 @@ function getTarget() {
     return { target: 8.5, label: '7,5 - 8,5 %', rationale: 'Fragilidad moderada-grave (deterioro cognitivo/funcional). Especial precaución ante hipoglucemias.', upperBound: 8.5 };
   }
   
-  // LOGICA ESTRATIFICADA SEGÚN CSV (OPENEVIDENCE TABLE 2026-05-21)
+  // LOGICA ESTRATIFICADA SEGÚN CSV (OPENEVIDENCE TABLE)
   if (!state.fragilidad && sinComplicaciones) {
     if (state.edad <= 40 && state.tiempoDx <= 5) {
         return { target: 6.5, label: '≤ 6,5 %', rationale: 'Adulto joven (≤ 40 años) con diagnóstico reciente (≤ 5 años) y sin comorbilidades: objetivo estricto (memoria metabólica).', upperBound: 6.5 };
@@ -723,7 +732,7 @@ function detectIncompatibilities(recs, trace) {
     if (clasesUsadas < 3 && state.fge >= 15) {
       recs.push({
         type: 'warn', tag: 'Uso Prematuro', title: 'Sulfonilureas relegadas a 3º o 4º escalón',
-        body: `El algoritmo 2026 no recomienda el uso de <strong>Sulfonilureas o Glinidas</strong> como monoterapia o doble terapia. Se han relegado a situaciones donde se precise un 3º o 4º fármaco tras fracasar otras familias con beneficios cardiorenales y menor riesgo de hipoglucemias. <em>Excepción: Uso de Repaglinida si FG < 15 ml/min.</em>`
+        body: `El algoritmo no recomienda el uso de <strong>Sulfonilureas o Glinidas</strong> como monoterapia o doble terapia. Se han relegado a situaciones donde se precise un 3º o 4º fármaco tras fracasar otras familias con beneficios cardiorenales y menor riesgo de hipoglucemias. <em>Excepción: Uso de Repaglinida si FG < 15 ml/min.</em>`
       });
       trace.push('Aviso: Uso prematuro de SU/Glinidas en 1ª o 2ª línea detectado.');
     }
@@ -736,14 +745,16 @@ function renderOptimizedState(cond, state, target) {
 
     if (cond.id === 'cirrosis') {
       justificacion += `<li><strong>Seguridad Hepática (Cirrosis):</strong> El paciente mantiene un control adecuado apoyándose en terapias de alta seguridad metabólica en contexto de insuficiencia hepática grave, sin incurrir en fármacos hepatotóxicos o de riesgo láctico.</li>`;
+    } else if (cond.id === 'ictus') {
+      justificacion += `<li><strong>Protección Cerebrovascular:</strong> Al presentar ictus/AIT previo, el esquema integra terapias de alta eficacia si fuera preciso, y controla la glucemia sin añadir riesgos adicionales.</li>`;
+    } else if (cond.id === 'ecvCoronaria') {
+      justificacion += `<li><strong>Protección Cardiovascular:</strong> Al presentar alto riesgo o evento coronario/periférico, el esquema ya integra terapias cardioprotectoras que han demostrado disminuir los eventos adversos mayores (MACE).</li>`;
     } else if (cond.id === 'ic') {
       justificacion += `<li><strong>Beneficio Pronóstico (IC):</strong> El paciente está recibiendo tratamiento con iSGLT-2, familias con nivel de evidencia 1A para reducir drásticamente las hospitalizaciones por insuficiencia cardíaca y la mortalidad cardiovascular.</li>`;
-    } else if (cond.id === 'ecv') {
-      justificacion += `<li><strong>Protección Cardiovascular:</strong> Al presentar alto riesgo o evento cardiovascular, el esquema ya integra terapias cardioprotectoras (iSGLT-2, arGLP-1 o arGIP/GLP-1) que han demostrado disminuir los eventos adversos mayores (MACE).</li>`;
     } else if (cond.id === 'erc') {
       justificacion += `<li><strong>Nefroprotección:</strong> El régimen incluye fármacos de primera línea para la enfermedad renal, que ralentizan significativamente la caída del filtrado glomerular y la progresión a nefropatía terminal.</li>`;
     } else if (cond.id === 'obesidad') {
-      justificacion += `<li><strong>Control Ponderal Activo:</strong> Teniendo obesidad como condicionante principal, el esquema actual incorpora moléculas que favorecen una pérdida de peso clínicamente relevante.</li>`;
+      justificacion += `<li><strong>Control Ponderal Activo:</strong> Teniendo obesidad como condicionante principal, el esquema actual atiende a la pérdida de peso o estabilización metabólica eficazmente.</li>`;
     } else if (cond.id === 'hepatica') {
       justificacion += `<li><strong>Mejora Histológica Hepática:</strong> El tratamiento incluye opciones que han evidenciado capacidad para revertir o frenar la progresión de la esteatohepatitis metabólica.</li>`;
     } else if (cond.id === 'fragilidad') {
@@ -785,8 +796,9 @@ function generateRecs(cond, target) {
 
   // FLUJO DE CONDICIONANTES
   if (cond.id === 'cirrosis') { conditionHandledIntensification = handleCirrosis(recs, trace, target) || conditionHandledIntensification; }
+  else if (cond.id === 'ictus') { conditionHandledIntensification = handleIctus(recs, trace, target) || conditionHandledIntensification; }
+  else if (cond.id === 'ecvCoronaria') { conditionHandledIntensification = handleECVCoronaria(recs, trace, target) || conditionHandledIntensification; }
   else if (cond.id === 'ic') { conditionHandledIntensification = handleIC(recs, trace, target) || conditionHandledIntensification; }
-  else if (cond.id === 'ecv') { conditionHandledIntensification = handleECV(recs, trace, target) || conditionHandledIntensification; }
   else if (cond.id === 'erc') { conditionHandledIntensification = handleERC(recs, trace, target) || conditionHandledIntensification; }
   else if (cond.id === 'obesidad') { conditionHandledIntensification = handleObesidad(recs, trace, target) || conditionHandledIntensification; }
   else if (cond.id === 'hepatica') { conditionHandledIntensification = handleHepatica(recs, trace, target) || conditionHandledIntensification; }
@@ -840,7 +852,55 @@ function handleCirrosis(recs, trace, target) {
     recs.push({ type: 'add', tag: 'Intensificar', title: 'Se recomienda Insulinización', body: `Al no alcanzar el objetivo con un iDPP-4, la opción de rescate más segura y eficaz en la insuficiencia hepática grave es la <strong>Insulina</strong>.` });
     intensified = true;
   }
-  return true; // Al tener cirrosis se bloquean otras ramas de intensificación automática.
+  return true; 
+}
+
+function handleIctus(recs, trace, target) {
+  let intensified = false;
+  const tieneGLP = hasClass('arglp');
+  const tienePio = state.drugs.pioglitazona;
+  
+  if (!tieneGLP) {
+    if(state.fge >= 15) {
+      recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar arGLP-1', body: `Para prevención secundaria de <strong>Ictus o AIT</strong>, la evidencia demuestra superioridad de los <strong>arGLP-1</strong>. Como alternativa oral en pacientes con insulinorresistencia, valore <strong>Pioglitazona</strong> (estudio IRIS). Los iSGLT-2 tienen un efecto neutro sobre el ictus isquémico.` });
+      intensified = true;
+    }
+  }
+  
+  if (!state.drugs.metformina && state.fge >= 30 && state.hba1c > target.upperBound) {
+    recs.push({ type: 'info', tag: 'Sinergia', title: 'Considerar Metformina', body: `Se aconseja acompañar de Metformina por su efecto glucémico complementario y bajo coste, ya que la evidencia de cardioprotección se generó mayoritariamente en combinación con ella, aunque las guías permiten iniciar protección vascular independientemente de la HbA1c.` });
+    // No marcamos intensified = true para no bloquear si ya lleva el GLP-1 y solo queremos sugerir la metformina como optimizador suave.
+  } else if (!state.drugs.metformina && state.fge >= 30 && state.hba1c <= target.upperBound && (tieneGLP || tienePio)) {
+    recs.push({ type: 'info', tag: 'Metformina no prioritaria', title: 'No se precisa añadir Metformina', body: `El paciente ya alcanza su objetivo glucémico con el tratamiento actual. La protección cerebrovascular se mantiene sin necesidad de añadir Metformina.` });
+  }
+
+  if (state.hba1c > target.upperBound && tieneGLP && !tienePio && !hasClass('isglt2')) {
+    recs.push({ type: 'add', tag: 'Intensificar', title: 'Se recomienda sumar Pioglitazona o iSGLT-2', body: `Para optimizar el control glucémico, se puede añadir Pioglitazona (beneficio en ictus recurrente) o un iSGLT-2.` });
+    intensified = true;
+  }
+  return intensified;
+}
+
+function handleECVCoronaria(recs, trace, target) {
+  let intensified = false;
+  const tieneCardio = hasClass('isglt2') || hasClass('arglp') || hasClass('argip');
+  
+  if (!tieneCardio) {
+    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar iSGLT-2, arGLP-1 o arGIP/GLP-1', body: `Iniciar terapia con beneficio cardiovascular demostrado independientemente de la HbA1c para frenar eventos MACE coronarios o periféricos.` });
+    intensified = true;
+  }
+  
+  if (!state.drugs.metformina && state.fge >= 30 && state.hba1c > target.upperBound) {
+    recs.push({ type: 'info', tag: 'Sinergia', title: 'Considerar Metformina', body: `Se aconseja acompañar de Metformina por su efecto glucémico complementario y bajo coste. La evidencia de cardioprotección se generó mayoritariamente en combinación con ella.` });
+  } else if (!state.drugs.metformina && state.fge >= 30 && state.hba1c <= target.upperBound && tieneCardio) {
+    recs.push({ type: 'info', tag: 'Metformina no prioritaria', title: 'No se precisa añadir Metformina', body: `El paciente ya alcanza su objetivo glucémico con el cardioprotector actual.` });
+  }
+  
+  if (state.hba1c > target.upperBound && tieneCardio && !(hasClass('isglt2') && (hasClass('arglp') || hasClass('argip')))) {
+    recs.push({ type: 'add', tag: 'Intensificar', title: 'Se recomienda sumar una segunda familia cardioprotectora', body: `Se recomienda combinar un iSGLT-2 con un arGLP-1/arGIP-GLP-1 simultáneamente para maximizar el pronóstico y el control glucémico.` });
+    intensified = true;
+  }
+  return intensified;
 }
 
 function handleIC(recs, trace, target) {
@@ -852,36 +912,18 @@ function handleIC(recs, trace, target) {
         intensified = true;
     }
   }
+  
   if (!state.drugs.metformina && state.fge >= 30 && state.hba1c > target.upperBound) {
-    recs.push({ type: 'add', tag: 'Combinar', title: 'Se recomienda asociar Metformina', body: `Para optimizar el control glucémico como compañero basal (nota 6 del algoritmo).` });
-    intensified = true;
+    recs.push({ type: 'info', tag: 'Sinergia', title: 'Considerar Metformina', body: `Se aconseja acompañar de Metformina por su efecto glucémico complementario y bajo coste.` });
   } else if (!state.drugs.metformina && state.fge >= 30 && state.hba1c <= target.upperBound && tieneSGLT2) {
     recs.push({ type: 'info', tag: 'Metformina no necesaria', title: 'No se precisa asociar Metformina', body: `El paciente ya alcanza su objetivo glucémico con el iSGLT-2 actual. Al estar controlado, la Metformina no aporta beneficio pronóstico adicional en IC.` });
   }
+
   if (state.hba1c > target.upperBound && tieneSGLT2 && !hasClass('arglp') && !hasClass('argip')) {
     if(state.fge >= 15) {
       recs.push({ type: 'add', tag: 'Si insuficiente', title: 'Se recomienda añadir arGLP-1 o arGIP/GLP-1', body: `Añadir incretínicos por beneficio demostrado en ensayos recientes en pacientes con IC, como complemento al SGLT2.` });
       intensified = true;
     }
-  }
-  return intensified;
-}
-
-function handleECV(recs, trace, target) {
-  let intensified = false;
-  const tieneCardio = hasClass('isglt2') || hasClass('arglp') || hasClass('argip');
-  if (!state.drugs.metformina && state.fge >= 30 && state.hba1c > target.upperBound) {
-    recs.push({ type: 'add', tag: 'Añadir base', title: 'Se recomienda prescribir Metformina', body: `Compañero basal para optimizar el control glucémico en ECV. El paciente está fuera de objetivo y la Metformina es el primer fármaco a añadir.` });
-    intensified = true;
-  } else if (!state.drugs.metformina && state.fge >= 30 && state.hba1c <= target.upperBound && tieneCardio) {
-    recs.push({ type: 'info', tag: 'Metformina no necesaria', title: 'No se precisa añadir Metformina', body: `El paciente ya alcanza su objetivo glucémico con el cardioprotector actual.` });
-  }
-  if (!tieneCardio) {
-    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda terapia combinada temprana', body: `Iniciar Metformina + (iSGLT-2 o arGLP-1 o arGIP/GLP-1) de inmediato, independientemente de la cifra de HbA1c, para frenar eventos MACE.` });
-    intensified = true;
-  } else if (state.hba1c > target.upperBound && !(hasClass('isglt2') && (hasClass('arglp') || hasClass('argip')))) {
-    recs.push({ type: 'add', tag: 'Intensificar', title: 'Se recomienda sumar una segunda familia cardioprotectora', body: `Se recomienda combinar un iSGLT-2 con un arGLP-1/arGIP-GLP-1 simultáneamente para maximizar el pronóstico.` });
-    intensified = true;
   }
   return intensified;
 }
@@ -895,12 +937,16 @@ function handleERC(recs, trace, target) {
     intensified = true;
   }
   
+  // PARCHE METFORMINA TRANSVERSAL
+  if (!state.drugs.metformina && state.fge >= 30 && state.hba1c > target.upperBound) {
+    recs.push({ type: 'add', tag: 'Sinergia Basal', title: 'Se recomienda asociar Metformina', body: `Para optimizar el control glucémico, se recomienda añadir Metformina como base terapéutica complementaria (Nota 6 del algoritmo).` });
+    intensified = true;
+  }
+
   if (state.hba1c > target.upperBound && (tieneSGLT2 || state.fge < 20) && !hasClass('arglp') && !hasClass('argip')) {
     if (state.fge >= 15) {
       recs.push({ type: 'add', tag: '2ª línea', title: 'Se recomienda añadir arGLP-1', body: `Especialmente la semaglutida (respaldada por el estudio FLOW) por su fuerte protección renal adicional al SGLT2 (Nota 9 del algoritmo: se pueden prescribir si FG ≥ 15 ml/min).` });
       intensified = true;
-    } else {
-      trace.push('FGe < 15 ml/min impide uso de arGLP-1 en segunda línea. Se delega el control a las opciones de pre-diálisis.');
     }
   }
   return intensified;
@@ -909,12 +955,26 @@ function handleERC(recs, trace, target) {
 function handleObesidad(recs, trace, target) {
   let intensified = false;
   const tieneIncretina = hasClass('arglp') || hasClass('argip');
+  const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'].filter(c => hasClass(c)).length;
+
   if (!tieneIncretina) {
     if(state.fge >= 15) {
-      recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar arGLP-1 o arGIP/GLP-1', body: `Opción mandatoria de primer escalón para pacientes obesos por las drásticas pérdidas de peso obtenidas (10-20%).` });
-      intensified = true;
+      // MODO ESCALÓN OBESIDAD: Solo fuerza inyectable si ya tomaba base o debuta grave.
+      if (clasesUsadas > 0 || state.hba1c >= 8.0) {
+        recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda asociar arGLP-1 o arGIP/GLP-1', body: `Para pacientes con obesidad que no logran control inicial o debutan muy descompensados, la terapia incretínica es prioritaria por las drásticas pérdidas de peso (10-20%) que atacan la resistencia a la insulina.` });
+        intensified = true;
+      } else {
+        trace.push('Paciente virgen con obesidad y descontrol leve/moderado (<8.0%). Se prioriza inicio con Metformina+Dieta antes de exigir inyectables de primera línea.');
+      }
     }
   }
+  
+  // PARCHE METFORMINA TRANSVERSAL
+  if (tieneIncretina && !state.drugs.metformina && state.fge >= 30 && state.hba1c > target.upperBound) {
+    recs.push({ type: 'add', tag: 'Sinergia Basal', title: 'Se recomienda asociar Metformina', body: `Para optimizar el control glucémico de base, se recomienda añadir Metformina (Nota 6 del algoritmo).` });
+    intensified = true;
+  }
+
   if (state.hba1c > target.upperBound && tieneIncretina && !hasClass('isglt2')) {
     if(state.fge >= 20) {
       recs.push({ type: 'add', tag: 'Intensificar', title: 'Se recomienda asociar un iSGLT-2', body: `Añadir a la incretina como mecanismo de rescate oral para controlar la glucemia y aportar una discreta sinergia ponderal.` });
@@ -935,6 +995,12 @@ function handleHepatica(recs, trace, target) {
     }
   }
   
+  // PARCHE METFORMINA TRANSVERSAL
+  if (!state.drugs.metformina && state.fge >= 30 && !state.cirrosis && state.hba1c > target.upperBound) {
+    recs.push({ type: 'add', tag: 'Sinergia Basal', title: 'Se recomienda asociar Metformina', body: `Para optimizar el control glucémico basal, se recomienda añadir Metformina (Nota 6 del algoritmo).` });
+    intensified = true;
+  }
+
   if (state.hba1c > target.upperBound && tieneIncretina && !hasClass('isglt2') && !state.drugs.pioglitazona) {
     recs.push({ type: 'add', tag: 'Intensificar (2º Escalón)', title: 'Se recomienda añadir iSGLT-2 o Pioglitazona', body: `Si el control glucémico fracasa a pesar de la terapia incretínica de base, el iSGLT-2 y la Pioglitazona (ambos con beneficios hepáticos avalados) son las intensificaciones de elección.` });
     intensified = true;
@@ -983,7 +1049,7 @@ function applyGeneralIntensification(recs, trace, target, hasCriticalConflict) {
       trace.push('Paciente sin tratamiento y HbA1c >= 8.5: Inicio inmediato con doble terapia o insulina según FGe.');
     } else if (state.hba1c > target.upperBound) {
       if (state.fge >= 30) {
-        recs.push({ type: 'add', tag: 'Inicio', title: 'Se recomienda iniciar tratamiento con Metformina', body: `En un paciente virgen de tratamiento y sin condicionantes clínicos predominantes, la estrategia universal marca iniciar <strong>Metformina</strong> como base. Titule la dosis progresivamente para mejorar la tolerabilidad gástrica.` });
+        recs.push({ type: 'add', tag: 'Inicio', title: 'Se recomienda iniciar tratamiento con Metformina', body: `En un paciente virgen de tratamiento y sin condicionantes clínicos predominantes graves, la estrategia universal marca iniciar <strong>Metformina</strong> como base y potenciar los cambios en el estilo de vida. Titule la dosis progresivamente para mejorar la tolerabilidad gástrica.` });
         trace.push('Paciente sin tratamiento y HbA1c fuera de objetivo: Inicio con Metformina.');
       } else {
         let textOpciones = `un <strong>iDPP-4</strong> (por su probada seguridad en ERC)`;
@@ -1049,8 +1115,9 @@ function update() {
   state.fge = parseFloat(document.getElementById('fge').value) || 0;
   state.sintomatico = document.getElementById('sintomatico').checked;
   state.cirrosis = document.getElementById('cirrosis').checked;
+  state.ictus = document.getElementById('ictus').checked;
+  state.ecvCoronaria = document.getElementById('ecvCoronaria').checked;
   state.ic = document.getElementById('ic').checked;
-  state.ecv = document.getElementById('ecv').checked;
   state.rcvAlto = document.getElementById('rcvAlto').checked;
   
   state.erc = state.fge < 60; 
