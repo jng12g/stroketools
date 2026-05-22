@@ -1020,6 +1020,10 @@ function handleFragilidad(recs, trace, target) {
 }
 
 function applyGeneralIntensification(recs, trace, target, hasCriticalConflict) {
+  // CORRECCIÓN: Si el paciente tiene clínica cardinal y HbA1c >= 8.5, 
+  // ya se ha pautado insulina. Abortamos la vía asintomática para no duplicar.
+  if (state.sintomatico && state.hba1c >= 8.5) return;
+
   const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'].filter(c => hasClass(c)).length;
   const availableADNIs = getAvailableADNIs(state);
   
