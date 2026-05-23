@@ -363,6 +363,13 @@
             <span class="check-desc">Child-Pugh B o C. Altera metabolismo de fármacos.</span>
           </span>
         </label>
+        <label class="check" data-check="fragilidad">
+          <input type="checkbox" id="fragilidad">
+          <span class="check-body">
+            <span class="check-label">Fragilidad</span>
+            <span class="check-desc">Comorbilidades, polifarmacia, esperanza vida reducida</span>
+          </span>
+        </label>
         <label class="check evidence" data-check="ictus">
           <input type="checkbox" id="ictus">
           <span class="check-body">
@@ -405,13 +412,6 @@
             <span class="check-desc">MASLD / MASH (antes EHGNA / EHNA)</span>
           </span>
         </label>
-        <label class="check" data-check="fragilidad">
-          <input type="checkbox" id="fragilidad">
-          <span class="check-body">
-            <span class="check-label">Fragilidad</span>
-            <span class="check-desc">Comorbilidades, polifarmacia, esperanza vida reducida</span>
-          </span>
-        </label>
       </div>
 
       <div class="sub-field" id="fragilidadGrade">
@@ -427,7 +427,7 @@
           <input type="checkbox" id="deterioro">
           <span class="check-body">
             <span class="check-label">Deterioro cognitivo / limitación funcional</span>
-            <span class="check-desc">Marca automáticamente fragilidad moderada-grave</span>
+            <span class="check-desc">Sugerencia geriátrica: Valorar estado de fragilidad</span>
           </span>
         </label>
       </div>
@@ -603,16 +603,20 @@ function drugsInClass(cls) {
 
 function getConditioner() {
   if (state.cirrosis) return { id: 'cirrosis', name: 'Cirrosis / Insuficiencia Hepática Grave', meta: 'Manejo altamente especializado. Fármacos seguros: Insulina o Linagliptina.' };
+  
+  // Novedad: La fragilidad se sitúa en la cima clínica. Modifica radicalmente el esquema.
+  if (state.fragilidad) {
+    const nameFrag = state.fragGrade === 'muyGrave' ? 'Muy grave / Vida limitada' : 'Moderada - Grave';
+    return { id: 'fragilidad', name: 'Fragilidad: ' + nameFrag, meta: 'Prioridad: Calidad de vida, evitar hipoglucemias y desprescribir fármacos de riesgo.' };
+  }
+  
   if (state.ictus) return { id: 'ictus', name: 'Enfermedad Cerebrovascular (Ictus / AIT)', meta: 'Prevención secundaria: arGLP-1 preferente (o Pioglitazona)' };
   if (state.ecvCoronaria || state.rcvAlto) { const label = state.ecvCoronaria ? 'ECV Coronaria / Periférica' : 'RCV elevado'; return { id: 'ecvCoronaria', name: label, meta: 'iSGLT-2 o arGLP-1 o arGIP-GLP-1 (con o sin Metformina)' }; }
   if (state.ic) return { id: 'ic', name: 'Insuficiencia cardíaca', meta: 'iSGLT-2 (con o sin Met) → arGLP-1 o arGIP-GLP-1' };
   if (state.erc) return { id: 'erc', name: 'Enfermedad renal crónica', meta: 'iSGLT-2 (si FGe ≥20) → arGLP-1 (preferible semaglutida)' };
   if (state.obesidad) return { id: 'obesidad', name: 'Obesidad', meta: 'Manejo del peso y glucemia (GLP-1 preferentes o Metformina)' };
   if (state.hepatica) return { id: 'hepatica', name: 'Enfermedad hepática metabólica', meta: 'arGIP-GLP-1 o arGLP-1 → iSGLT-2 o Pioglitazona' };
-  if (state.fragilidad) {
-    const nameFrag = state.fragGrade === 'muyGrave' ? 'Muy grave / Vida limitada' : 'Moderada - Grave';
-    return { id: 'fragilidad', name: 'Fragilidad: ' + nameFrag, meta: 'iDPP-4 → +Met → insulina + Met (evitar Sulfonilureas)' };
-  }
+  
   return { id: null, name: 'Ninguno', meta: 'Algoritmo guiado por HbA1c y clínica cardinal' };
 }
 
@@ -780,12 +784,6 @@ function detectIncompatibilities(recs, trace) {
     incomp = true;
   }
 
-  if ((hasClass('su') || hasClass('glinida')) && state.fragilidad && !state.cirrosis) {
-    recs.push({ type: 'danger', tag: 'Riesgo Geriátrico', title: 'Se recomienda retirar los Secretagogos (SU/Glinidas)', body: `En pacientes con fragilidad o deterioro, los secretagogos están fuertemente desaconsejados por provocar hipoglucemias severas que derivan en caídas y daño neurológico.` });
-    trace.push('Fragilidad + Secretagogo: Incompatibilidad por riesgo de hipoglucemia severa.');
-    incomp = true;
-  }
-
   if ((hasClass('su') || hasClass('glinida')) && !state.fragilidad && !state.cirrosis) {
     const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'glinida', 'pio'].filter(c => hasClass(c)).length;
     if (clasesUsadas < 3 && state.fge >= 15 && hasClass('su')) {
@@ -804,6 +802,8 @@ function renderOptimizedState(cond, state, target) {
 
     if (cond.id === 'cirrosis') {
       justificacion += `<li><strong>Seguridad Hepática (Cirrosis):</strong> El paciente mantiene un control adecuado apoyándose en terapias de alta seguridad metabólica en contexto de insuficiencia hepática grave.</li>`;
+    } else if (cond.id === 'fragilidad') {
+      justificacion += `<li><strong>Seguridad Geriátrica:</strong> En base a su grado de fragilidad, la prioridad se ha cumplido: preservar la calidad de vida, seguridad sistémica y evitar activamente las hipoglucemias.</li>`;
     } else if (cond.id === 'ictus') {
       justificacion += `<li><strong>Protección Cerebrovascular:</strong> Al presentar ictus/AIT previo, el esquema integra terapias de alta eficacia si fuera preciso, y controla la glucemia sin añadir riesgos.</li>`;
     } else if (cond.id === 'ecvCoronaria') {
@@ -816,8 +816,6 @@ function renderOptimizedState(cond, state, target) {
       justificacion += `<li><strong>Control Ponderal Activo:</strong> Teniendo obesidad como condicionante principal, el esquema actual atiende a la pérdida de peso o estabilización metabólica eficazmente.</li>`;
     } else if (cond.id === 'hepatica') {
       justificacion += `<li><strong>Mejora Histológica Hepática:</strong> El tratamiento incluye opciones que han evidenciado capacidad para revertir o frenar la progresión de la esteatohepatitis metabólica.</li>`;
-    } else if (cond.id === 'fragilidad') {
-      justificacion += `<li><strong>Seguridad Geriátrica:</strong> En base a su grado de fragilidad, la prioridad es la seguridad y evitar hipoglucemias.</li>`;
     } else {
       justificacion += `<li><strong>Eficacia y Tolerabilidad:</strong> El paciente no presenta complicaciones mayores, logrando un excelente control metabólico mantenido.</li>`;
     }
@@ -835,9 +833,20 @@ function generateRecs(cond, target) {
   trace.push(`Evaluación: HbA1c actual de ${state.hba1c.toFixed(1)} % frente a objetivo de ${target.label}`);
 
   const hasCriticalConflict = detectIncompatibilities(recs, trace);
+
+  // =====================================================================
+  // EL NUDGE GERIÁTRICO (Empujoncito de reflexión)
+  // =====================================================================
+  if (!state.fragilidad && (state.edad > 85 || state.deterioro)) {
+    recs.push({
+      type: 'info', tag: 'Individualización Geriátrica', title: 'Valorar estado de fragilidad',
+      body: `Dada la edad del paciente (${state.edad} años) y/o la presencia de deterioro, se recomienda individualizar el tratamiento con especial precaución ante hipoglucemias. Si considera que la esperanza de vida es limitada o el grado de deterioro es importante, <strong>se recomienda marcar directamente la casilla "Fragilidad"</strong> en el panel de condicionantes para adaptar las recomendaciones a una estrategia de preservación de calidad de vida y desprescripción.`
+    });
+    trace.push('Nudge geriátrico: Paciente >85 años o con deterioro funcional sin fragilidad marcada.');
+  }
   
   // =====================================================================
-  // MANEJO DE URGENCIAS Y GLUCOTOXICIDAD (Solución C Integrada)
+  // MANEJO DE URGENCIAS Y GLUCOTOXICIDAD 
   // =====================================================================
   const isPaliativo = state.fragilidad && state.fragGrade === 'muyGrave';
   const farmacoPrioritario = getFarmacoPrioritario(cond.id);
@@ -902,24 +911,25 @@ function generateRecs(cond, target) {
 
   // =====================================================================
   // FLUJO DE CONDICIONANTES (Se silencian si hay Urgencia Metabólica)
+  // Notar que la fragilidad ahora trunca a casi todas las demás para centrarse en QoL
   // =====================================================================
   if (cond.id === 'cirrosis') { conditionHandledIntensification = handleCirrosis(recs, trace, target) || conditionHandledIntensification; }
+  else if (cond.id === 'fragilidad') { conditionHandledIntensification = handleFragilidad(recs, trace, target) || conditionHandledIntensification; }
   else if (cond.id === 'ictus') { conditionHandledIntensification = handleIctus(recs, trace, target) || conditionHandledIntensification; }
   else if (cond.id === 'ecvCoronaria') { conditionHandledIntensification = handleECVCoronaria(recs, trace, target) || conditionHandledIntensification; }
   else if (cond.id === 'ic') { conditionHandledIntensification = handleIC(recs, trace, target) || conditionHandledIntensification; }
   else if (cond.id === 'erc') { conditionHandledIntensification = handleERC(recs, trace, target) || conditionHandledIntensification; }
   else if (cond.id === 'obesidad') { conditionHandledIntensification = handleObesidad(recs, trace, target) || conditionHandledIntensification; }
   else if (cond.id === 'hepatica') { conditionHandledIntensification = handleHepatica(recs, trace, target) || conditionHandledIntensification; }
-  else if (cond.id === 'fragilidad') { conditionHandledIntensification = handleFragilidad(recs, trace, target) || conditionHandledIntensification; }
 
   // Intensificación General (solo si no hubo comorbilidades ni emergencias metabólicas)
-  if (cond.id === null || (state.hba1c > target.upperBound && !conditionHandledIntensification && cond.id !== 'fragilidad' && !state.sintomatico)) {
+  if (cond.id === null || (state.hba1c > target.upperBound && !conditionHandledIntensification && !state.sintomatico)) {
       applyGeneralIntensification(recs, trace, target, hasCriticalConflict);
   }
 
   const inTarget = state.hba1c <= target.upperBound;
-  // Excluimos finerenona de needsActionGlycemic para no bloquear el mensaje de "Optimizado".
-  const needsActionGlycemic = recs.some(r => (r.type === 'add' || r.type === 'warn' || r.type === 'danger') && r.title !== 'Se recomienda iniciar Finerenona' && r.title !== 'Finerenona diferida por Hiperpotasemia');
+  // Excluimos finerenona y Nudge Geriátrico de needsActionGlycemic para no bloquear el mensaje de "Optimizado".
+  const needsActionGlycemic = recs.some(r => (r.type === 'add' || r.type === 'warn' || r.type === 'danger') && r.tag !== 'Individualización Geriátrica' && r.title !== 'Se recomienda iniciar Finerenona' && r.title !== 'Finerenona diferida por Hiperpotasemia');
 
   if (!needsActionGlycemic && target.target !== null && inTarget && !hasCriticalConflict) {
     const justificacionOptimizado = renderOptimizedState(cond, state, target);
@@ -943,6 +953,32 @@ function generateRecs(cond, target) {
 // ---------------------------------------------------------------------
 // HANDLERS DE COMORBILIDADES
 // ---------------------------------------------------------------------
+
+function handleFragilidad(recs, trace, target) {
+  if (state.fragGrade === 'muyGrave') {
+    recs.push({ type: 'warn', tag: 'Final de vida', title: 'Se recomienda desintensificación estructurada', body: `El objetivo es puramente paliativo. Deben retirarse todas las medidas para prevenir complicaciones crónicas y ajustar fármacos al mínimo viable para evitar clínica aguda.` });
+    return true;
+  }
+  
+  if (state.hba1c > 10.0 || (state.sintomatico && state.hba1c >= 8.5)) return true;
+  
+  const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'glinida', 'pio', 'ins'].filter(c => hasClass(c)).length;
+  const coreMessage = 'El manejo clínico debe centrarse exclusivamente en preservar la calidad de vida. El objetivo es simplificar la pauta para asegurar la ausencia de hipoglucemias y evitar síntomas de hiperglucemia (poliuria, polidipsia, pérdida de peso).';
+  
+  if (clasesUsadas === 0) {
+    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar con iDPP-4', body: coreMessage + `<br><br>Al estar virgen de tratamiento, se recomienda iniciar <strong>iDPP-4</strong> (ej. linagliptina, sitagliptina) como terapia base preferida por carecer de riesgo de hipoglucemia y tener posologías muy seguras.` });
+  } else {
+    recs.push({ type: 'info', tag: 'Desprescripción / Sustitución', title: 'Priorizar Calidad de Vida', body: coreMessage + `<br><br>Se recomienda <strong>sustituir o retirar</strong> fármacos de riesgo en lugar de añadir nuevos. Valore transicionar la base del tratamiento a un <strong>iDPP-4</strong> si precisa control sintomático.` });
+    
+    if (hasClass('isglt2')) {
+        recs.push({ type: 'warn', tag: 'Riesgo Geriátrico', title: 'Precaución severa con iSGLT-2', body: `El paciente toma un iSGLT-2. A estas edades y nivel de fragilidad, inducen glucosuria y diuresis osmótica, elevando drásticamente el riesgo de deshidratación, hipotensión ortostática, caídas y sarcopenia. <strong>Considere firmemente su retirada o sustitución.</strong>` });
+    }
+    if (hasClass('su') || hasClass('glinida') || hasClass('ins')) {
+        recs.push({ type: 'danger', tag: 'Riesgo Geriátrico Crítico', title: 'Peligro de Hipoglucemia Severa', body: `El uso de Secretagogos (Sulfonilureas/Glinidas) o Insulina en pacientes frágiles conlleva un altísimo riesgo de hipoglucemias severas, caídas y daño neurológico. <strong>Se debe buscar la mínima dosis viable o proceder a su retirada/sustitución progresiva.</strong>` });
+    }
+  }
+  return true; 
+}
 
 function handleCirrosis(recs, trace, target) {
   if (state.hba1c > 10.0 || (state.sintomatico && state.hba1c >= 8.5)) return true;
@@ -1126,20 +1162,6 @@ function handleHepatica(recs, trace, target) {
   return intensified;
 }
 
-function handleFragilidad(recs, trace, target) {
-  if (state.fragGrade === 'muyGrave') {
-    recs.push({ type: 'warn', tag: 'Final de vida', title: 'Se recomienda desintensificación estructurada', body: `El objetivo es puramente paliativo. Deben retirarse todas las medidas para prevenir complicaciones crónicas y ajustar fármacos al mínimo viable para evitar clínica aguda.` });
-    return true;
-  }
-  
-  if (state.hba1c > 10.0 || (state.sintomatico && state.hba1c >= 8.5)) return true;
-  
-  if (!hasClass('idpp4') && !hasClass('arglp') && !hasClass('argip')) {
-    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda el uso de iDPP-4', body: `En pacientes añosos y vulnerables, los iDPP-4 (linagliptina, sitagliptina) son el tratamiento base preferido por carecer de riesgo de hipoglucemia y tener posologías sencillas.` });
-  }
-  return true; 
-}
-
 function applyGeneralIntensification(recs, trace, target, hasCriticalConflict) {
   if (state.hba1c > 10.0 || (state.sintomatico && state.hba1c >= 8.5)) return;
 
@@ -1242,6 +1264,8 @@ function update() {
   state.obesidad = document.getElementById('obesidad').checked;
   state.hepatica = document.getElementById('hepatica').checked;
   state.fragilidad = document.getElementById('fragilidad').checked;
+  
+  // Eliminado el automatismo que ligaba el deterioro cognitivo a la fragilidad
   state.deterioro = document.getElementById('deterioro').checked;
 
   const fragRadio = document.querySelector('input[name="fragGrade"]:checked');
@@ -1249,14 +1273,6 @@ function update() {
 
   state.drugs = {};
   document.querySelectorAll('[data-drug]').forEach(cb => { state.drugs[cb.dataset.drug] = cb.checked; });
-
-  if (state.deterioro) {
-      state.fragilidad = true; document.getElementById('fragilidad').checked = true;
-      if (state.fragGrade !== 'muyGrave') {
-        state.fragGrade = 'moderadaGrave';
-        document.querySelector('input[name="fragGrade"][value="moderadaGrave"]').checked = true;
-      }
-  }
 
   document.getElementById('hbValue').textContent = state.hba1c.toFixed(1);
   const gme = Math.round(28.7 * state.hba1c - 46.7);
