@@ -990,7 +990,10 @@ function handleFragilidad(recs, trace, target) {
     }
   } else if (state.hba1c > target.upperBound) {
     // Toma fármacos seguros (Metformina) pero está fuera de objetivo
-    recs.push({ type: 'add', tag: 'Optimización Geriátrica', title: 'Transición a iDPP-4', body: coreMessage + `<br><br>Al no alcanzar el objetivo, y para evitar polifarmacia, valore <strong>sustituir o añadir un iDPP-4</strong>. Evite en lo posible escalar a terapias inyectables complejas o que induzcan pérdida de masa muscular.` });
+    recs.push({ 
+      type: 'add', tag: 'Optimización Geriátrica', title: 'Añadir iDPP-4', 
+      body: coreMessage + `<br><br>Al estar por encima del objetivo (HbA1c > ${target.upperBound}%), se recomienda <strong>añadir un iDPP-4</strong> a su pauta actual. <br><br><em>Nota clínica: No se recomienda sustituir la Metformina por el iDPP-4 para intentar mejorar el control, ya que la menor potencia del iDPP-4 provocaría un efecto rebote y un aumento de la HbA1c. (La sustitución solo procedería si hay intolerancia digestiva o anorexia).</em>` 
+    });
   } else {
     // Toma fármacos seguros (Metformina/iDPP4) y ESTÁ EN OBJETIVO (El caso de tu paciente de 95 años)
     if (state.drugs.metformina) {
