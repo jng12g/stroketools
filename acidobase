@@ -632,6 +632,20 @@ function getTarget() {
   return { target: 7.0, label: '< 7,0 %', rationale: 'Objetivo individualizado general por presencia de comorbilidad o patología orgánica establecida.', upperBound: 7.0 };
 }
 
+function getFarmacoPrioritario(condId) {
+  switch(condId) {
+    case 'cirrosis': return 'iDPP-4 (Linagliptina) o Insulina';
+    case 'ictus': return 'arGLP-1 (o Pioglitazona)';
+    case 'ecvCoronaria': return 'iSGLT-2, arGLP-1 o arGIP/GLP-1';
+    case 'ic': return 'iSGLT-2 (y/o arGLP-1 si hay obesidad asociada)';
+    case 'erc': return 'iSGLT-2 (o arGLP-1 preferiblemente semaglutida)';
+    case 'obesidad': return 'arGLP-1 o arGIP/GLP-1';
+    case 'hepatica': return 'Semaglutida';
+    case 'fragilidad': return 'iDPP-4 (por su alto perfil de seguridad geriátrica)';
+    default: return 'un segundo fármaco de muy alta eficacia (ej. arGLP-1, arGIP o iSGLT-2)';
+  }
+}
+
 function getAvailableADNIs(state) {
   let options = [];
   const hasGLP = hasClass('arglp') || hasClass('argip');
@@ -798,24 +812,50 @@ function generateRecs(cond, target) {
   trace.push(`Evaluación: HbA1c actual de ${state.hba1c.toFixed(1)} % frente a objetivo de ${target.label}`);
 
   const hasCriticalConflict = detectIncompatibilities(recs, trace);
+  
+  // =====================================================================
+  // MANEJO DE URGENCIAS Y GLUCOTOXICIDAD (Solución C Integrada)
+  // =====================================================================
+  const isPaliativo = state.fragilidad && state.fragGrade === 'muyGrave';
+  const farmacoPrioritario = getFarmacoPrioritario(cond.id);
+  let textoTransicion = ` Una vez resuelta la glucotoxicidad y retirados los síntomas (HbA1c < 8%), se recomienda transicionar y priorizar <strong>${farmacoPrioritario}</strong> para abordar su condicionante clínico principal (${cond.name}).`;
 
-  // MANEJO DEL DESCONTROL SEVERO SINTOMÁTICO
-  if (state.sintomatico && state.hba1c >= 8.5) {
+  // 1. Descontrol severo catabólico (Sintomático y >= 8.5)
+  if (state.sintomatico && state.hba1c >= 8.5 && !isPaliativo) {
     if (state.cirrosis) {
-      recs.push({ type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulinización Basal', body: `Ante clínica cardinal grave con HbA1c ≥ 8,5 % en paciente con cirrosis, la única opción segura para el rescate agudo es la <strong>Insulina Basal</strong>.` });
+      recs.push({ type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulinización Basal', body: `Ante clínica cardinal grave con HbA1c ≥ 8,5 % en paciente con cirrosis, la única opción segura para el rescate agudo es la <strong>Insulina Basal</strong>.` + textoTransicion });
     } else if (state.fge >= 30) {
-      recs.push({ type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulina Basal + Metformina', body: `Ante clínica cardinal grave o signos de catabolismo con HbA1c ≥ 8,5 %, se debe iniciar inmediatamente <strong>Insulina Basal combinada con Metformina</strong> para frenar la glucotoxicidad de forma aguda.` });
+      recs.push({ type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulina Basal + Metformina', body: `Ante clínica cardinal grave o signos de catabolismo con HbA1c ≥ 8,5 %, se debe iniciar inmediatamente <strong>Insulina Basal combinada con Metformina</strong> para frenar la glucotoxicidad de forma aguda.` + textoTransicion });
     } else {
-      recs.push({ type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulina Basal en monoterapia', body: `Ante clínica cardinal grave con HbA1c ≥ 8,5 % y <strong>FGe &lt; 30 ml/min</strong> (Metformina contraindicada), se debe iniciar <strong>Insulina Basal en monoterapia</strong> para frenar la glucotoxicidad.` });
+      recs.push({ type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulina Basal en monoterapia', body: `Ante clínica cardinal grave con HbA1c ≥ 8,5 % y <strong>FGe &lt; 30 ml/min</strong> (Metformina contraindicada), se debe iniciar <strong>Insulina Basal en monoterapia</strong> para frenar la glucotoxicidad.` + textoTransicion });
     }
-    conditionHandledIntensification = true; 
-  } else if (state.sintomatico) {
+    conditionHandledIntensification = true;
+    trace.push(`Clínica cardinal detectada. Se prioriza insulina con transición planificada a ${farmacoPrioritario}.`);
+  } 
+  // 2. Descontrol severo asintomático (> 10%)
+  else if (!state.sintomatico && state.hba1c > 10.0 && !isPaliativo) {
+    let textoA = `Iniciar Doble/Triple Terapia combinando Metformina con <strong>${farmacoPrioritario}</strong> por su condicionante clínico.`;
+    if (state.fge < 30) textoA = `Iniciar terapia combinada segura para ERC integrando <strong>${farmacoPrioritario}</strong> (Metformina contraindicada).`;
+    let textoB = state.fge >= 30 ? 'Iniciar Insulina Basal (+ Metformina).' : 'Iniciar Insulina Basal en monoterapia (Metformina contraindicada por FGe < 30).';
+
+    recs.push({
+      type: 'warn', tag: 'Bifurcación Terapéutica', title: 'Decisión Compartida: redGDPS vs ADA 2026 (HbA1c > 10 %)',
+      body: `El paciente presenta glucotoxicidad severa. La ADA recomienda valorar insulina basal transitoria, mientras que la redGDPS permite intentar un rescate agresivo no insulínico al no haber clínica cardinal. Elija según el perfil del paciente:<br><br>
+      <ul style="margin-top:0;">
+        <li style="margin-bottom:8px;"><strong>Opción A (Vía No Insulínica de Alta Potencia):</strong> ${textoA} <em>Condición: Requiere asegurar adherencia y reevaluar estrictamente en 2-4 semanas. Si no hay descenso drástico basal, pasar a Opción B.</em></li>
+        <li><strong>Opción B (Rescate Insulínico Transitorio):</strong> ${textoB} <em>Ventaja: Elimina rápidamente la glucotoxicidad. Una vez estabilizado (< 8 %), se puede retirar la insulina y transicionar al esquema ideal para su condicionante (${cond.name}).</em></li>
+      </ul>`
+    });
+    conditionHandledIntensification = true;
+    trace.push(`Descontrol asintomático >10%. Bifurcación dinámica inyectando ${farmacoPrioritario}.`);
+  } 
+  // 3. Discordancia Clínica
+  else if (state.sintomatico && state.hba1c < 8.5) {
     recs.push({ type: 'warn', tag: 'Discordancia clínica-analítica', title: 'Investigar antes de intensificar', body: `La HbA1c <strong>${state.hba1c.toFixed(1)} %</strong> no justifica por sí sola la presencia de clínica cardinal. Busque desencadenantes agudos.` });
   }
 
   // =====================================================================
-  // NUEVO: Evaluación INDEPENDIENTE de Finerenona (ADA 2026)
-  // Se evalúa siempre, porque NO baja la glucosa, es pura protección
+  // Evaluación INDEPENDIENTE de Finerenona (ADA 2026)
   // =====================================================================
   if (state.uacr === 'macro' && state.ras) {
     if (state.fge >= 25 && state.potasio <= 5.0) {
@@ -836,7 +876,9 @@ function generateRecs(cond, target) {
     }
   }
 
-  // FLUJO DE CONDICIONANTES
+  // =====================================================================
+  // FLUJO DE CONDICIONANTES (Se silencian si hay Urgencia Metabólica)
+  // =====================================================================
   if (cond.id === 'cirrosis') { conditionHandledIntensification = handleCirrosis(recs, trace, target) || conditionHandledIntensification; }
   else if (cond.id === 'ictus') { conditionHandledIntensification = handleIctus(recs, trace, target) || conditionHandledIntensification; }
   else if (cond.id === 'ecvCoronaria') { conditionHandledIntensification = handleECVCoronaria(recs, trace, target) || conditionHandledIntensification; }
@@ -846,12 +888,13 @@ function generateRecs(cond, target) {
   else if (cond.id === 'hepatica') { conditionHandledIntensification = handleHepatica(recs, trace, target) || conditionHandledIntensification; }
   else if (cond.id === 'fragilidad') { conditionHandledIntensification = handleFragilidad(recs, trace, target) || conditionHandledIntensification; }
 
+  // Intensificación General (solo si no hubo comorbilidades ni emergencias metabólicas)
   if (cond.id === null || (state.hba1c > target.upperBound && !conditionHandledIntensification && cond.id !== 'fragilidad' && !state.sintomatico)) {
       applyGeneralIntensification(recs, trace, target, hasCriticalConflict);
   }
 
   const inTarget = state.hba1c <= target.upperBound;
-  // Excluimos la finerenona de needsActionGlycemic para no bloquear el mensaje de "Optimizado" si el azúcar está bien.
+  // Excluimos finerenona de needsActionGlycemic para no bloquear el mensaje de "Optimizado".
   const needsActionGlycemic = recs.some(r => (r.type === 'add' || r.type === 'warn' || r.type === 'danger') && r.title !== 'Se recomienda iniciar Finerenona' && r.title !== 'Finerenona diferida por Hiperpotasemia');
 
   if (!needsActionGlycemic && target.target !== null && inTarget && !hasCriticalConflict) {
@@ -873,7 +916,13 @@ function generateRecs(cond, target) {
   return { recs, trace };
 }
 
+// ---------------------------------------------------------------------
+// HANDLERS DE COMORBILIDADES
+// Notar la primera línea de guardia en cada uno.
+// ---------------------------------------------------------------------
+
 function handleCirrosis(recs, trace, target) {
+  if (state.hba1c > 10.0 || (state.sintomatico && state.hba1c >= 8.5)) return true;
   let intensified = false;
   if (!hasClass('idpp4') && !hasClass('ins')) {
     recs.push({ type: 'add', tag: 'Terapia Segura', title: 'Se recomienda iDPP-4 o Insulina', body: `El manejo de la diabetes en la cirrosis hepática avanzada es muy restrictivo. Las opciones más seguras son los <strong>iDPP-4</strong> (especialmente la Linagliptina por su eliminación biliar que no exige ajuste) o la <strong>Insulina</strong>.` });
@@ -887,6 +936,7 @@ function handleCirrosis(recs, trace, target) {
 }
 
 function handleIctus(recs, trace, target) {
+  if (state.hba1c > 10.0 || (state.sintomatico && state.hba1c >= 8.5)) return true;
   let intensified = false;
   const tieneGLP = hasClass('arglp');
   const tienePio = state.drugs.pioglitazona;
@@ -912,6 +962,7 @@ function handleIctus(recs, trace, target) {
 }
 
 function handleECVCoronaria(recs, trace, target) {
+  if (state.hba1c > 10.0 || (state.sintomatico && state.hba1c >= 8.5)) return true;
   let intensified = false;
   const tieneCardio = hasClass('isglt2') || hasClass('arglp') || hasClass('argip');
   
@@ -934,6 +985,7 @@ function handleECVCoronaria(recs, trace, target) {
 }
 
 function handleIC(recs, trace, target) {
+  if (state.hba1c > 10.0 || (state.sintomatico && state.hba1c >= 8.5)) return true;
   let intensified = false;
   const tieneSGLT2 = hasClass('isglt2');
   const tieneIncretina = hasClass('arglp') || hasClass('argip');
@@ -969,6 +1021,7 @@ function handleIC(recs, trace, target) {
 }
 
 function handleERC(recs, trace, target) {
+  if (state.hba1c > 10.0 || (state.sintomatico && state.hba1c >= 8.5)) return true;
   let intensified = false;
   const tieneSGLT2 = hasClass('isglt2');
   
@@ -992,6 +1045,7 @@ function handleERC(recs, trace, target) {
 }
 
 function handleObesidad(recs, trace, target) {
+  if (state.hba1c > 10.0 || (state.sintomatico && state.hba1c >= 8.5)) return true;
   let intensified = false;
   const tieneIncretina = hasClass('arglp') || hasClass('argip');
   const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'].filter(c => hasClass(c)).length;
@@ -1025,6 +1079,7 @@ function handleObesidad(recs, trace, target) {
 }
 
 function handleHepatica(recs, trace, target) {
+  if (state.hba1c > 10.0 || (state.sintomatico && state.hba1c >= 8.5)) return true;
   let intensified = false;
   const tieneSemaglutida = state.drugs.semaglutida;
   const tieneIncretinaB = (hasClass('arglp') && !tieneSemaglutida) || hasClass('argip');
@@ -1055,17 +1110,23 @@ function handleHepatica(recs, trace, target) {
 }
 
 function handleFragilidad(recs, trace, target) {
-  if (!hasClass('idpp4') && !hasClass('arglp') && !hasClass('argip') && state.fragGrade !== 'muyGrave') {
-    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda el uso de iDPP-4', body: `En pacientes añosos y vulnerables, los iDPP-4 (linagliptina, sitagliptina) son el tratamiento base preferido por carecer de riesgo de hipoglucemia y tener posologías sencillas.` });
-  }
   if (state.fragGrade === 'muyGrave') {
     recs.push({ type: 'warn', tag: 'Final de vida', title: 'Se recomienda desintensificación estructurada', body: `El objetivo es puramente paliativo. Deben retirarse todas las medidas para prevenir complicaciones crónicas y ajustar fármacos al mínimo viable para evitar clínica aguda.` });
+    return true; // Salimos directamente en paliativos, no queremos ni insulina ni nada de alta potencia.
+  }
+  
+  // Guard clause para fragilidad moderada (permitimos que el top-level mande insulina si hace falta)
+  if (state.hba1c > 10.0 || (state.sintomatico && state.hba1c >= 8.5)) return true;
+  
+  if (!hasClass('idpp4') && !hasClass('arglp') && !hasClass('argip')) {
+    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda el uso de iDPP-4', body: `En pacientes añosos y vulnerables, los iDPP-4 (linagliptina, sitagliptina) son el tratamiento base preferido por carecer de riesgo de hipoglucemia y tener posologías sencillas.` });
   }
   return true; 
 }
 
 function applyGeneralIntensification(recs, trace, target, hasCriticalConflict) {
-  if (state.sintomatico && state.hba1c >= 8.5) return;
+  // Guard: Si top-level ya manejó el descontrol agudo, abortamos aquí.
+  if (state.hba1c > 10.0 || (state.sintomatico && state.hba1c >= 8.5)) return;
 
   const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'].filter(c => hasClass(c)).length;
   const availableADNIs = getAvailableADNIs(state);
@@ -1080,28 +1141,6 @@ function applyGeneralIntensification(recs, trace, target, hasCriticalConflict) {
   if (hasCriticalConflict) {
     recs.push({ type: 'add', tag: 'Reestructuración', title: 'Se requiere Reestructuración Terapéutica', body: `Es obligatorio suspender o retirar parte de su tratamiento actual por motivos de seguridad médica. Sustituya los fármacos retirados por opciones seguras para tratar de alcanzar la meta.${optionsText}` });
     trace.push('Intensificación bloqueada: Se requiere reestructuración previa por conflictos graves.');
-    return;
-  }
-
-  if (state.hba1c > 10.0) {
-    let opcionA = '';
-    if (clasesUsadas === 0) {
-      opcionA = state.fge >= 30 ? 'Iniciar Doble Terapia combinando Metformina con un fármaco de muy alta eficacia (idealmente arGLP-1 o arGIP/GLP-1).' : 'Iniciar terapia combinada segura para ERC (Metformina contraindicada).';
-    } else {
-      opcionA = 'Intensificar esquema actual hacia Triple/Cuádruple terapia agotando vías de muy alta eficacia (ej. arGLP-1/arGIP o iSGLT-2) si aún no los toma.';
-    }
-    
-    let opcionB = state.fge >= 30 ? 'Iniciar Insulina Basal (+ Metformina).' : 'Iniciar Insulina Basal en monoterapia (Metformina contraindicada por FGe < 30).';
-
-    recs.push({
-      type: 'warn', tag: 'Bifurcación Terapéutica', title: 'Decisión Compartida: redGDPS vs ADA 2026 (HbA1c > 10 %)',
-      body: `La ADA recomienda valorar insulina basal transitoria para vencer la glucotoxicidad severa, mientras que la redGDPS permite intentar un rescate no insulínico al no haber clínica cardinal o signos de catabolismo. Elija según el perfil del paciente:<br><br>
-      <ul style="margin-top:0;">
-        <li style="margin-bottom:8px;"><strong>Opción A (Vía No Insulínica de Alta Potencia):</strong> ${opcionA} <em>Condición: Requiere asegurar adherencia y reevaluar estrictamente en 2-4 semanas. Si no hay descenso drástico basal, pasar a Opción B.</em></li>
-        <li><strong>Opción B (Rescate Insulínico Transitorio):</strong> ${opcionB} <em>Ventaja: Elimina rápidamente la glucotoxicidad. Una vez estabilizado (< 8 %), se puede retirar la insulina y cambiar a esquema ADNI.</em></li>
-      </ul>`
-    });
-    trace.push('HbA1c > 10% asintomático: Se presenta Bifurcación Terapéutica (Insulina transitoria vs Alta Potencia).');
     return;
   }
 
@@ -1172,7 +1211,6 @@ function update() {
   state.tiempoDx = parseFloat(document.getElementById('tiempoDx').value) || 0;
   state.fge = parseFloat(document.getElementById('fge').value) || 0;
   
-  // ADA 2026: Finerenona Inputs
   state.uacr = document.getElementById('uacr').value;
   state.potasio = parseFloat(document.getElementById('potasio').value);
   state.ras = document.getElementById('ras').value === 'si';
@@ -1184,7 +1222,6 @@ function update() {
   state.ic = document.getElementById('ic').checked;
   state.rcvAlto = document.getElementById('rcvAlto').checked;
   
-  // Definición clínica actualizada de ERC (FG < 60 O Presencia de Albuminuria)
   state.erc = state.fge < 60 || state.uacr === 'micro' || state.uacr === 'macro'; 
   
   state.obesidad = document.getElementById('obesidad').checked;
@@ -1254,7 +1291,6 @@ function resetAll() {
   document.getElementById('tiempoDx').value = 5;
   document.getElementById('fge').value = 80;
   
-  // Resetear nuevos campos ADA 2026
   document.getElementById('uacr').value = 'normal';
   document.getElementById('potasio').value = 4.5;
   document.getElementById('ras').value = 'si';
