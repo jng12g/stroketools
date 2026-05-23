@@ -317,14 +317,13 @@
         </div>
       </div>
 
-      <!-- NUEVA FILA ADA 2026: Finerenona / Potasio / UACR -->
       <div class="row" style="margin-top: 14px;">
         <div class="field">
           <label>Albuminuria (UACR)</label>
           <select id="uacr">
             <option value="normal">&lt; 30 mg/g (Normal)</option>
-            <option value="micro">30 - 100 mg/g</option>
-            <option value="macro">≥ 100 mg/g</option>
+            <option value="micro">30 - 100 mg/g (Micro)</option>
+            <option value="macro">≥ 100 mg/g (Macro)</option>
           </select>
         </div>
         <div class="field">
@@ -616,7 +615,6 @@ function getTarget() {
     return { target: 8.5, label: '7,5 - 8,5 %', rationale: 'Fragilidad moderada-grave (deterioro cognitivo/funcional). Especial precaución ante hipoglucemias.', upperBound: 8.5 };
   }
   
-  // LOGICA ESTRATIFICADA
   if (!state.fragilidad && sinComplicaciones) {
     if (state.edad <= 40 && state.tiempoDx <= 5) {
         return { target: 6.5, label: '≤ 6,5 %', rationale: 'Adulto joven (≤ 40 años) con diagnóstico reciente (≤ 5 años) y sin comorbilidades: objetivo estricto.', upperBound: 6.5 };
@@ -631,7 +629,6 @@ function getTarget() {
     }
   }
 
-  // DEFAULT
   return { target: 7.0, label: '< 7,0 %', rationale: 'Objetivo individualizado general por presencia de comorbilidad o patología orgánica establecida.', upperBound: 7.0 };
 }
 
@@ -682,7 +679,6 @@ function detectIncompatibilities(recs, trace) {
     }
   });
 
-  // ALERTAS DE CIRROSIS
   if (state.cirrosis) {
       if (state.drugs.metformina) {
           recs.push({ type: 'danger', tag: 'Contraindicación Absoluta', title: 'Suspender Metformina Inmediatamente', body: `En presencia de cirrosis o insuficiencia hepática grave (Child-Pugh B/C), la Metformina está formalmente contraindicada por el alto riesgo de acidosis láctica fatal.` });
@@ -698,7 +694,6 @@ function detectIncompatibilities(recs, trace) {
       }
   }
 
-  // ALERTAS RENALES
   if (state.fge < 30 && !state.cirrosis) {
       recs.push({
           type: 'danger', tag: 'Alerta Renal Crítica', title: 'FGe < 30 ml/min: Manejo Especializado',
@@ -723,7 +718,6 @@ function detectIncompatibilities(recs, trace) {
     recs.push({ type: 'warn', tag: 'Ajuste de dosis', title: 'Se recomienda reducir la dosis de Metformina', body: `Con un FGe de ${state.fge} mL/min (en el rango 30-45), la Metformina exige precaución extrema. Se debe reducir obligatoriamente su dosis al 50% de la máxima tolerada previamente.` });
   }
 
-  // NUEVA LÓGICA ADA 2026: Mantenimiento de iSGLT-2 con FGe < 20
   if (hasClass('isglt2') && state.fge < 20) {
     recs.push({ 
       type: 'ok', tag: 'Mantenimiento Seguro', title: 'Continuar iSGLT-2 (FGe < 20)', 
@@ -769,7 +763,7 @@ function detectIncompatibilities(recs, trace) {
 }
 
 function renderOptimizedState(cond, state, target) {
-    let justificacion = `El paciente ha alcanzado su objetivo glucémico individualizado (<strong>${state.hba1c.toFixed(1)} %</strong> para una meta de <strong>${target.label}</strong>). El esquema actual se considera idóneo y optimizado por los siguientes motivos clínicos:<br><ul>`;
+    let justificacion = `El paciente ha alcanzado su objetivo glucémico individualizado (<strong>${state.hba1c.toFixed(1)} %</strong> para una meta de <strong>${target.label}</strong>). El esquema glucémico se considera idóneo y optimizado por los siguientes motivos clínicos:<br><ul>`;
 
     if (cond.id === 'cirrosis') {
       justificacion += `<li><strong>Seguridad Hepática (Cirrosis):</strong> El paciente mantiene un control adecuado apoyándose en terapias de alta seguridad metabólica en contexto de insuficiencia hepática grave.</li>`;
@@ -791,7 +785,7 @@ function renderOptimizedState(cond, state, target) {
       justificacion += `<li><strong>Eficacia y Tolerabilidad:</strong> El paciente no presenta complicaciones mayores, logrando un excelente control metabólico mantenido.</li>`;
     }
 
-    justificacion += `</ul><br><strong>Conducta a seguir:</strong> No proceden cambios farmacológicos en este momento. Se recomienda mantener el esquema vigente y citar al paciente para su control clínico rutinario.`;
+    justificacion += `</ul><br><strong>Conducta a seguir:</strong> No proceden cambios en la medicación antidiabética en este momento. Se recomienda mantener el esquema vigente y citar al paciente para su control clínico rutinario.`;
     
     return justificacion;
 }
@@ -805,22 +799,41 @@ function generateRecs(cond, target) {
 
   const hasCriticalConflict = detectIncompatibilities(recs, trace);
 
-  // MANEJO DEL DESCONTROL SEVERO SINTOMÁTICO (Clínica Cardinal)
+  // MANEJO DEL DESCONTROL SEVERO SINTOMÁTICO
   if (state.sintomatico && state.hba1c >= 8.5) {
     if (state.cirrosis) {
       recs.push({ type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulinización Basal', body: `Ante clínica cardinal grave con HbA1c ≥ 8,5 % en paciente con cirrosis, la única opción segura para el rescate agudo es la <strong>Insulina Basal</strong>.` });
-      trace.push('Descompensación sintomática + Cirrosis: Insulinización aislada recomendada.');
     } else if (state.fge >= 30) {
       recs.push({ type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulina Basal + Metformina', body: `Ante clínica cardinal grave o signos de catabolismo con HbA1c ≥ 8,5 %, se debe iniciar inmediatamente <strong>Insulina Basal combinada con Metformina</strong> para frenar la glucotoxicidad de forma aguda.` });
-      trace.push('Descompensación grave sintomática (FGe ≥ 30): Insulinización + Metformina.');
     } else {
-      recs.push({ type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulina Basal en monoterapia', body: `Ante clínica cardinal grave con HbA1c ≥ 8,5 % y <strong>FGe &lt; 30 ml/min</strong> (Metformina contraindicada), se debe iniciar <strong>Insulina Basal en monoterapia</strong> para frenar la glucotoxicidad. Tras la estabilización, valore asociar un iDPP-4.` });
-      trace.push('Descompensación grave sintomática (FGe < 30): Insulinización aislada por contraindicación de Metformina.');
+      recs.push({ type: 'warn', tag: 'Clínica cardinal', title: 'Se recomienda Insulina Basal en monoterapia', body: `Ante clínica cardinal grave con HbA1c ≥ 8,5 % y <strong>FGe &lt; 30 ml/min</strong> (Metformina contraindicada), se debe iniciar <strong>Insulina Basal en monoterapia</strong> para frenar la glucotoxicidad.` });
     }
     conditionHandledIntensification = true; 
   } else if (state.sintomatico) {
-    recs.push({ type: 'warn', tag: 'Discordancia clínica-analítica', title: 'Investigar antes de intensificar', body: `La HbA1c <strong>${state.hba1c.toFixed(1)} %</strong> no justifica por sí sola la presencia de clínica cardinal (poliuria, polidipsia, pérdida de peso). Antes de insulinizar confirme con glucemia capilar y busque desencadenantes agudos, fármacos u otras patologías.` });
-    trace.push('Síntomas cardinales con HbA1c < 8,5 %: alerta de discordancia clínica-analítica.');
+    recs.push({ type: 'warn', tag: 'Discordancia clínica-analítica', title: 'Investigar antes de intensificar', body: `La HbA1c <strong>${state.hba1c.toFixed(1)} %</strong> no justifica por sí sola la presencia de clínica cardinal. Busque desencadenantes agudos.` });
+  }
+
+  // =====================================================================
+  // NUEVO: Evaluación INDEPENDIENTE de Finerenona (ADA 2026)
+  // Se evalúa siempre, porque NO baja la glucosa, es pura protección
+  // =====================================================================
+  if (state.uacr === 'macro' && state.ras) {
+    if (state.fge >= 25 && state.potasio <= 5.0) {
+      let dosisInit = state.fge > 60 ? '20 mg/día' : '10 mg/día (titular a 20 mg si potasio ≤ 4,8)';
+      let tieneSGLT2 = hasClass('isglt2');
+      let inicioSimultaneo = (!tieneSGLT2 && state.fge >= 30 && state.fge <= 90) ? 
+        `<br><br><strong>Nota (Rec 11.9):</strong> Puede considerarse la iniciación simultánea de un iSGLT-2 y finerenona (ensayo CONFIDENCE).` : '';
+
+      recs.push({ 
+        type: 'add', tag: 'Nefro/Cardioprotección (Evidencia A)', title: 'Se recomienda iniciar Finerenona', 
+        body: `Indicado para reducir la progresión de la ERC y los eventos cardiovasculares. El análisis combinado FIDELITY confirmó una reducción del 14% en eventos CV y del 23% en el desenlace renal compuesto.<br>
+        <strong>Dosis sugerida:</strong> ${dosisInit}.<br>
+        <strong>Precaución:</strong> Monitorizar potasio a las 4 semanas. Suspender si > 5,5 mmol/L y reiniciar a 10 mg cuando sea ≤ 5,0 mmol/L.${inicioSimultaneo}` 
+      });
+      trace.push('UACR ≥ 100 e IECA/ARA-II: Se añade Finerenona independientemente del control glucémico.');
+    } else if (state.potasio > 5.0) {
+      recs.push({ type: 'warn', tag: 'Contraindicación Temporal', title: 'Finerenona diferida por Hiperpotasemia', body: `El paciente tiene indicación para Finerenona (UACR ≥ 100 mg/g y uso de IECA/ARA-II), pero su potasio basal es > 5.0 mmol/L. Debe corregir el potasio antes de iniciar terapia.` });
+    }
   }
 
   // FLUJO DE CONDICIONANTES
@@ -833,39 +846,27 @@ function generateRecs(cond, target) {
   else if (cond.id === 'hepatica') { conditionHandledIntensification = handleHepatica(recs, trace, target) || conditionHandledIntensification; }
   else if (cond.id === 'fragilidad') { conditionHandledIntensification = handleFragilidad(recs, trace, target) || conditionHandledIntensification; }
 
-  // APLICACIÓN DE INTENSIFICACIÓN GENERAL (Sólo si no se ha resuelto ya y el paciente está fuera de objetivo)
   if (cond.id === null || (state.hba1c > target.upperBound && !conditionHandledIntensification && cond.id !== 'fragilidad' && !state.sintomatico)) {
-      if (cond.id !== null) trace.push('Fármacos del condicionante optimizados pero paciente sigue fuera de objetivo -> Se aplica intensificación escalonada.');
       applyGeneralIntensification(recs, trace, target, hasCriticalConflict);
   }
 
   const inTarget = state.hba1c <= target.upperBound;
-  const needsAction = recs.some(r => r.type === 'add' || r.type === 'warn' || r.type === 'danger');
+  // Excluimos la finerenona de needsActionGlycemic para no bloquear el mensaje de "Optimizado" si el azúcar está bien.
+  const needsActionGlycemic = recs.some(r => (r.type === 'add' || r.type === 'warn' || r.type === 'danger') && r.title !== 'Se recomienda iniciar Finerenona' && r.title !== 'Finerenona diferida por Hiperpotasemia');
 
-  if (!needsAction && target.target !== null && inTarget && !hasCriticalConflict) {
+  if (!needsActionGlycemic && target.target !== null && inTarget && !hasCriticalConflict) {
     const justificacionOptimizado = renderOptimizedState(cond, state, target);
     recs.push({
-      type: 'ok', tag: 'Paciente Optimizado', title: 'El tratamiento está clínica y farmacológicamente optimizado',
+      type: 'ok', tag: 'Paciente Optimizado', title: 'El tratamiento glucémico está optimizado',
       body: justificacionOptimizado
     });
-  } else if (state.hba1c > target.upperBound && target.target !== null && recs.some(r => r.type === 'add' || r.type === 'danger')) {
-    
-    // GESTIÓN DEL SEGUIMIENTO DINÁMICO
+  } else if (state.hba1c > target.upperBound && target.target !== null && needsActionGlycemic) {
     if (state.cirrosis) {
-      recs.push({
-        type: 'warn', tag: 'Seguimiento Estrecho', title: 'Control por Aparato Digestivo / Especialista',
-        body: `Dada la insuficiencia hepática terminal y la fragilidad del metabolismo glucídico, cualquier modificación farmacológica exige un control muy estrecho por su especialista para monitorizar riesgo de hipoglucemias o deterioro de la función hepática.`
-      });
+      recs.push({ type: 'warn', tag: 'Seguimiento Estrecho', title: 'Control por Aparato Digestivo / Especialista', body: `Dada la insuficiencia hepática terminal, cualquier modificación farmacológica exige un control muy estrecho por su especialista.` });
     } else if (state.fge < 45) {
-      recs.push({
-        type: 'warn', tag: 'Seguimiento Estrecho', title: 'Control y seguimiento nefrológico < 3 meses',
-        body: `Dada la insuficiencia renal significativa (FGe ${state.fge} mL/min) y la necesidad de ajustar el tratamiento, el paciente requiere un control analítico y seguimiento estrecho conjuntamente con Nefrología en un plazo <strong>inferior a 3 meses</strong> para monitorizar la función renal, los niveles de potasio y la tolerabilidad de la nueva pauta.`
-      });
+      recs.push({ type: 'warn', tag: 'Seguimiento Estrecho', title: 'Control nefrológico < 3 meses', body: `Requiere control analítico en menos de 3 meses para monitorizar función renal y potasio.` });
     } else {
-      recs.push({
-        type: 'warn', tag: 'Seguimiento', title: 'Se recomienda reevaluar a los 3 meses',
-        body: `Al no alcanzar el objetivo hoy y requerirse cambios o correcciones en el tratamiento, es obligatorio realizar un control de HbA1c a los 3 meses para evitar inercia clínica y confirmar la eficacia de la pauta establecida.`
-      });
+      recs.push({ type: 'warn', tag: 'Seguimiento', title: 'Se recomienda reevaluar a los 3 meses', body: `Al no alcanzar el objetivo hoy, es obligatorio realizar un control de HbA1c a los 3 meses para evitar inercia clínica.` });
     }
   }
 
@@ -937,7 +938,6 @@ function handleIC(recs, trace, target) {
   const tieneSGLT2 = hasClass('isglt2');
   const tieneIncretina = hasClass('arglp') || hasClass('argip');
   
-  // NUEVA LÓGICA ADA 2026: Obesidad + IC (Ensayo SUMMIT)
   if (state.obesidad && !tieneIncretina) {
     recs.push({ 
       type: 'add', tag: 'Evidencia A (IC + Obesidad)', title: 'Se recomienda iniciar arGIP/GLP-1 o arGLP-1', 
@@ -972,38 +972,16 @@ function handleERC(recs, trace, target) {
   let intensified = false;
   const tieneSGLT2 = hasClass('isglt2');
   
-  // 1. iSGLT-2
   if (state.fge >= 20 && !tieneSGLT2) {
     recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar iSGLT-2', body: `Pilar fundamental en enfermedad renal crónica para ralentizar la caída del FG y la progresión a diálisis.` });
     intensified = true;
   }
   
-  // 2. NUEVA LÓGICA ADA 2026: Finerenona (Rec 11.8 y 11.9)
-  if (state.uacr === 'macro' && state.ras) {
-    if (state.fge >= 25 && state.potasio <= 5.0) {
-      let dosisInit = state.fge > 60 ? '20 mg/día' : '10 mg/día (titular a 20 mg si potasio ≤ 4,8)';
-      let inicioSimultaneo = (!tieneSGLT2 && state.fge >= 30 && state.fge <= 90) ? 
-        `<br><br><strong>Nota (Rec 11.9):</strong> Puede considerarse la iniciación simultánea de un iSGLT-2 y finerenona (ensayo CONFIDENCE).` : '';
-
-      recs.push({ 
-        type: 'add', tag: 'Nefro/Cardioprotección (Evidencia A)', title: 'Se recomienda iniciar Finerenona', 
-        body: `Indicado para reducir la progresión de la ERC y los eventos cardiovasculares. El análisis combinado FIDELITY confirmó una reducción del 14% en eventos cardiovasculares y del 23% en el desenlace renal compuesto.<br>
-        <strong>Dosis sugerida:</strong> ${dosisInit}.<br>
-        <strong>Precaución:</strong> Monitorizar potasio a las 4 semanas de inicio o cambio. Suspender si > 5,5 mmol/L y reiniciar a 10 mg cuando sea ≤ 5,0 mmol/L.${inicioSimultaneo}` 
-      });
-      intensified = true;
-    } else if (state.potasio > 5.0) {
-      recs.push({ type: 'warn', tag: 'Contraindicación Temporal', title: 'Finerenona diferida por Hiperpotasemia', body: `El paciente tiene indicación teórica para Finerenona (UACR ≥ 100 mg/g y uso de IECA/ARA-II), pero su potasio basal es > 5.0 mmol/L. Debe corregir el potasio antes de iniciar terapia.` });
-    }
-  }
-
-  // 3. Metformina basal
   if (!state.drugs.metformina && state.fge >= 30 && state.hba1c > target.upperBound) {
     recs.push({ type: 'add', tag: 'Sinergia Basal', title: 'Se recomienda asociar Metformina', body: `Para optimizar el control glucémico, se recomienda añadir Metformina como base complementaria.` });
     intensified = true;
   }
 
-  // 4. arGLP-1
   if (state.hba1c > target.upperBound && (tieneSGLT2 || state.fge < 20) && !hasClass('arglp') && !hasClass('argip')) {
     if (state.fge >= 15) {
       recs.push({ type: 'add', tag: '2ª línea', title: 'Se recomienda añadir arGLP-1', body: `Especialmente la semaglutida (respaldada por el estudio FLOW) por su fuerte protección renal adicional al SGLT2.` });
@@ -1046,7 +1024,6 @@ function handleObesidad(recs, trace, target) {
   return intensified;
 }
 
-// NUEVA LÓGICA ADA 2026: Jerarquización de Semaglutida y Terapia Combinada en MASH
 function handleHepatica(recs, trace, target) {
   let intensified = false;
   const tieneSemaglutida = state.drugs.semaglutida;
@@ -1064,7 +1041,6 @@ function handleHepatica(recs, trace, target) {
     }
   }
   
-  // Terapia combinada (Sinergia)
   if ((tieneSemaglutida || tieneIncretinaB) && !tienePio && state.hba1c > target.upperBound && !state.ic) {
     recs.push({ type: 'add', tag: 'Sinergia Hepática', title: 'Considerar terapia combinada con Pioglitazona', body: `La ADA 2026 sugiere que la combinación de <strong>arGLP-1 + Pioglitazona</strong> puede considerarse por sus potenciales efectos beneficiosos aditivos sobre la esteatohepatitis.` });
     intensified = true;
@@ -1196,7 +1172,7 @@ function update() {
   state.tiempoDx = parseFloat(document.getElementById('tiempoDx').value) || 0;
   state.fge = parseFloat(document.getElementById('fge').value) || 0;
   
-  // Novedades ADA 2026: Finerenona Inputs
+  // ADA 2026: Finerenona Inputs
   state.uacr = document.getElementById('uacr').value;
   state.potasio = parseFloat(document.getElementById('potasio').value);
   state.ras = document.getElementById('ras').value === 'si';
@@ -1208,7 +1184,8 @@ function update() {
   state.ic = document.getElementById('ic').checked;
   state.rcvAlto = document.getElementById('rcvAlto').checked;
   
-  state.erc = state.fge < 60; 
+  // Definición clínica actualizada de ERC (FG < 60 O Presencia de Albuminuria)
+  state.erc = state.fge < 60 || state.uacr === 'micro' || state.uacr === 'macro'; 
   
   state.obesidad = document.getElementById('obesidad').checked;
   state.hepatica = document.getElementById('hepatica').checked;
