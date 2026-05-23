@@ -834,15 +834,24 @@ function generateRecs(cond, target) {
 
   const hasCriticalConflict = detectIncompatibilities(recs, trace);
 
-  // =====================================================================
+// =====================================================================
   // EL NUDGE GERIÁTRICO (Empujoncito de reflexión)
   // =====================================================================
   if (!state.fragilidad && (state.edad > 85 || state.deterioro)) {
+    let motivoNudge = '';
+    if (state.edad > 85 && state.deterioro) {
+      motivoNudge = `la avanzada edad del paciente (${state.edad} años) y la presencia de deterioro cognitivo o limitación funcional`;
+    } else if (state.edad > 85) {
+      motivoNudge = `la avanzada edad del paciente (${state.edad} años)`;
+    } else {
+      motivoNudge = `la presencia de deterioro cognitivo o limitación funcional`;
+    }
+
     recs.push({
-      type: 'info', tag: 'Individualización Geriátrica', title: 'Valorar estado de fragilidad',
-      body: `Dada la edad del paciente (${state.edad} años) y/o la presencia de deterioro, se recomienda individualizar el tratamiento con especial precaución ante hipoglucemias. Si considera que la esperanza de vida es limitada o el grado de deterioro es importante, <strong>se recomienda marcar directamente la casilla "Fragilidad"</strong> en el panel de condicionantes para adaptar las recomendaciones a una estrategia de preservación de calidad de vida y desprescripción.`
+      type: 'info', tag: 'Individualización Clínica', title: 'Valorar estado de fragilidad',
+      body: `Dada ${motivoNudge}, se recomienda individualizar el tratamiento con especial precaución ante hipoglucemias. Si considera que la esperanza de vida es limitada o el grado de deterioro es importante, <strong>se recomienda marcar directamente la casilla "Fragilidad"</strong> en el panel de condicionantes para adaptar las recomendaciones a una estrategia de preservación de calidad de vida y desprescripción.`
     });
-    trace.push('Nudge geriátrico: Paciente >85 años o con deterioro funcional sin fragilidad marcada.');
+    trace.push(`Nudge de fragilidad activado por: ${motivoNudge}.`);
   }
   
   // =====================================================================
