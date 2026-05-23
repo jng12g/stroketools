@@ -972,12 +972,15 @@ function handleFragilidad(recs, trace, target) {
   if (state.hba1c > 10.0 || (state.sintomatico && state.hba1c >= 8.5)) return true;
   
   const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'glinida', 'pio', 'ins'].filter(c => hasClass(c)).length;
-  const coreMessage = 'El manejo clínico debe centrarse exclusivamente en preservar la calidad de vida. El objetivo es simplificar la pauta para asegurar la ausencia de hipoglucemias y evitar síntomas de hiperglucemia (poliuria, polidipsia, pérdida de peso).';
+  const tieneRiesgoGeriátrico = hasClass('isglt2') || hasClass('su') || hasClass('glinida') || hasClass('ins');
+  const coreMessage = 'El manejo clínico debe centrarse exclusivamente en preservar la calidad de vida. El objetivo es asegurar la ausencia de hipoglucemias y evitar síntomas de hiperglucemia (poliuria, polidipsia, pérdida de peso).';
   
   if (clasesUsadas === 0) {
+    // Paciente virgen
     recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar con iDPP-4', body: coreMessage + `<br><br>Al estar virgen de tratamiento, se recomienda iniciar <strong>iDPP-4</strong> (ej. linagliptina, sitagliptina) como terapia base preferida por carecer de riesgo de hipoglucemia y tener posologías muy seguras.` });
-  } else {
-    recs.push({ type: 'info', tag: 'Desprescripción / Sustitución', title: 'Priorizar Calidad de Vida', body: coreMessage + `<br><br>Se recomienda <strong>sustituir o retirar</strong> fármacos de riesgo en lugar de añadir nuevos. Valore transicionar la base del tratamiento a un <strong>iDPP-4</strong> si precisa control sintomático.` });
+  } else if (tieneRiesgoGeriátrico) {
+    // Toma SGLT2, SU, Glinidas o Insulina (Riesgo inaceptable)
+    recs.push({ type: 'info', tag: 'Desprescripción / Sustitución', title: 'Priorizar Calidad de Vida', body: coreMessage + `<br><br>Se recomienda <strong>sustituir o retirar</strong> fármacos de alto riesgo geriátrico en lugar de añadir nuevos. Valore transicionar la base del tratamiento a un <strong>iDPP-4</strong> si precisa control sintomático.` });
     
     if (hasClass('isglt2')) {
         recs.push({ type: 'warn', tag: 'Riesgo Geriátrico', title: 'Precaución severa con iSGLT-2', body: `El paciente toma un iSGLT-2. A estas edades y nivel de fragilidad, inducen glucosuria y diuresis osmótica, elevando drásticamente el riesgo de deshidratación, hipotensión ortostática, caídas y sarcopenia. <strong>Considere firmemente su retirada o sustitución.</strong>` });
@@ -985,7 +988,16 @@ function handleFragilidad(recs, trace, target) {
     if (hasClass('su') || hasClass('glinida') || hasClass('ins')) {
         recs.push({ type: 'danger', tag: 'Riesgo Geriátrico Crítico', title: 'Peligro de Hipoglucemia Severa', body: `El uso de Secretagogos (Sulfonilureas/Glinidas) o Insulina en pacientes frágiles conlleva un altísimo riesgo de hipoglucemias severas, caídas y daño neurológico. <strong>Se debe buscar la mínima dosis viable o proceder a su retirada/sustitución progresiva.</strong>` });
     }
+  } else if (state.hba1c > target.upperBound) {
+    // Toma fármacos seguros (Metformina) pero está fuera de objetivo
+    recs.push({ type: 'info', tag: 'Optimización Geriátrica', title: 'Transición a iDPP-4', body: coreMessage + `<br><br>Al no alcanzar el objetivo, y para evitar polifarmacia, valore <strong>sustituir o añadir un iDPP-4</strong>. Evite en lo posible escalar a terapias inyectables complejas o que induzcan pérdida de masa muscular.` });
+  } else {
+    // Toma fármacos seguros (Metformina/iDPP4) y ESTÁ EN OBJETIVO (El caso de tu paciente de 95 años)
+    if (state.drugs.metformina) {
+        recs.push({ type: 'ok', tag: 'Mantenimiento Geriátrico', title: 'Vigilancia de Metformina', body: `El paciente está bien controlado con su pauta actual. La Metformina es segura si el filtrado glomerular lo permite, pero a esta edad <strong>vigile activamente la aparición de anorexia, pérdida de peso involuntaria o intolerancia digestiva</strong>. Si ocurren, considere retirarla o cambiar a iDPP-4.` });
+    }
   }
+  
   return true; 
 }
 
