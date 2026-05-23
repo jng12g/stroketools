@@ -990,7 +990,7 @@ function handleFragilidad(recs, trace, target) {
     }
   } else if (state.hba1c > target.upperBound) {
     // Toma fármacos seguros (Metformina) pero está fuera de objetivo
-    recs.push({ type: 'info', tag: 'Optimización Geriátrica', title: 'Transición a iDPP-4', body: coreMessage + `<br><br>Al no alcanzar el objetivo, y para evitar polifarmacia, valore <strong>sustituir o añadir un iDPP-4</strong>. Evite en lo posible escalar a terapias inyectables complejas o que induzcan pérdida de masa muscular.` });
+    recs.push({ type: 'add', tag: 'Optimización Geriátrica', title: 'Transición a iDPP-4', body: coreMessage + `<br><br>Al no alcanzar el objetivo, y para evitar polifarmacia, valore <strong>sustituir o añadir un iDPP-4</strong>. Evite en lo posible escalar a terapias inyectables complejas o que induzcan pérdida de masa muscular.` });
   } else {
     // Toma fármacos seguros (Metformina/iDPP4) y ESTÁ EN OBJETIVO (El caso de tu paciente de 95 años)
     if (state.drugs.metformina) {
