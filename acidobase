@@ -476,10 +476,15 @@
           </div>
         </div>
         <div class="drug-class" data-drugclass="su">
-          <div class="drug-class-title">Sulfonilureas / Glinidas</div>
+          <div class="drug-class-title">Sulfonilureas</div>
           <div class="drug-options">
             <label class="drug-option"><input type="checkbox" data-drug="glimepirida"><span>Glimepirida</span></label>
             <label class="drug-option"><input type="checkbox" data-drug="gliclazida"><span>Gliclazida</span></label>
+          </div>
+        </div>
+        <div class="drug-class" data-drugclass="glinida">
+          <div class="drug-class-title">Glinidas</div>
+          <div class="drug-options">
             <label class="drug-option"><input type="checkbox" data-drug="repaglinida"><span>Repaglinida</span></label>
           </div>
         </div>
@@ -494,6 +499,12 @@
           <div class="drug-options">
             <label class="drug-option"><input type="checkbox" data-drug="insulinaBasal"><span>Basal (glargina/degludec/detemir)</span></label>
             <label class="drug-option"><input type="checkbox" data-drug="insulinaPrandial"><span>Prandial / mezcla</span></label>
+          </div>
+        </div>
+        <div class="drug-class" data-drugclass="arm">
+          <div class="drug-class-title">ARM</div>
+          <div class="drug-options">
+            <label class="drug-option"><input type="checkbox" data-drug="finerenona"><span>Finerenona</span></label>
           </div>
         </div>
       </div>
@@ -571,7 +582,7 @@ const DRUG_LABELS = {
   semaglutida: 'Semaglutida', dulaglutida: 'Dulaglutida', liraglutida: 'Liraglutida', exenatida: 'Exenatida', tirzepatida: 'Tirzepatida',
   sitagliptina: 'Sitagliptina', linagliptina: 'Linagliptina', vildagliptina: 'Vildagliptina', saxagliptina: 'Saxagliptina',
   glimepirida: 'Glimepirida', gliclazida: 'Gliclazida', repaglinida: 'Repaglinida', pioglitazona: 'Pioglitazona',
-  insulinaBasal: 'Insulina basal', insulinaPrandial: 'Insulina prandial'
+  insulinaBasal: 'Insulina basal', insulinaPrandial: 'Insulina prandial', finerenona: 'Finerenona'
 };
 
 const DRUG_CLASS = {
@@ -580,8 +591,8 @@ const DRUG_CLASS = {
   semaglutida: 'arglp', dulaglutida: 'arglp', liraglutida: 'arglp', exenatida: 'arglp',
   tirzepatida: 'argip',
   sitagliptina: 'idpp4', linagliptina: 'idpp4', vildagliptina: 'idpp4', saxagliptina: 'idpp4',
-  glimepirida: 'su', gliclazida: 'su', repaglinida: 'su', pioglitazona: 'pio',
-  insulinaBasal: 'ins', insulinaPrandial: 'ins'
+  glimepirida: 'su', gliclazida: 'su', repaglinida: 'glinida', pioglitazona: 'pio',
+  insulinaBasal: 'ins', insulinaPrandial: 'ins', finerenona: 'arm'
 };
 
 function hasClass(cls) { return Object.entries(state.drugs).some(([k,v]) => v && DRUG_CLASS[k] === cls); }
@@ -650,7 +661,7 @@ function getAvailableADNIs(state) {
   let options = [];
   const hasGLP = hasClass('arglp') || hasClass('argip');
   const hasDPP4 = hasClass('idpp4');
-  const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'].filter(c => hasClass(c)).length;
+  const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'glinida', 'pio'].filter(c => hasClass(c)).length;
 
   if (state.cirrosis) {
      if (!hasDPP4) options.push('<strong>iDPP-4</strong> (específicamente Linagliptina por su excreción biliar).');
@@ -660,16 +671,16 @@ function getAvailableADNIs(state) {
   if (!hasClass('met') && state.fge >= 30) options.push('<strong>Metformina</strong> (base del tratamiento, económica y probada).');
   if (!hasClass('isglt2') && state.fge >= 20) options.push('<strong>iSGLT-2</strong> (ej. Empagliflozina, Dapagliflozina o Canagliflozina).');
   
-  if (!hasGLP && state.fge >= 15) options.push('<strong>arGLP-1</strong> (ej. Semaglutida, Dulaglutida) o <strong>arGIP/GLP-1</strong> (Tirzepatida).');
+  if (!hasGLP) options.push('<strong>arGLP-1 / arGIP</strong> (Semaglutida y Dulaglutida son seguros incluso en diálisis; evitar exenatida/lixisenatida si FG ≤ 30).');
   if (!hasDPP4 && !hasGLP) options.push('<strong>iDPP-4</strong>: Fármacos neutros en peso y extremadamente seguros (primera línea en fragilidad y FG terminal).');
   if (!hasClass('pio') && !state.ic) options.push('<strong>Pioglitazona</strong>: Mejora la resistencia a la insulina.');
   
-  if (!hasClass('su') && !state.fragilidad && state.fge >= 15) {
+  if (!hasClass('su') && !hasClass('glinida') && !state.fragilidad && state.fge >= 15) {
     if (clasesUsadas >= 2) {
       options.push('<strong>Sulfonilureas</strong>: Útiles solo como 3er o 4º ADNI. <em>Gliclazida o Glimepirida son las de elección.</em>');
     }
   }
-  if (!hasClass('su') && state.fge < 15 && !state.fragilidad) {
+  if (!hasClass('su') && !hasClass('glinida') && state.fge < 15 && !state.fragilidad) {
       options.push('<strong>Repaglinida</strong>: Útil como excepción por el bajo filtrado glomerular (FG < 15 ml/min).');
   }
 
@@ -679,19 +690,31 @@ function getAvailableADNIs(state) {
 function detectIncompatibilities(recs, trace) {
   let incomp = false;
 
-  const classesToCheck = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'];
+  const classesToCheck = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'glinida', 'pio', 'arm'];
   classesToCheck.forEach(cls => {
     const selectedInClass = drugsInClass(cls);
     if (selectedInClass.length > 1) {
       const drugNames = selectedInClass.map(d => DRUG_LABELS[d]).join(' y ');
       recs.push({
         type: 'danger', tag: 'Duplicidad Terapéutica', title: 'Asociación Incompatible por misma familia',
-        body: `Se ha detectado el uso simultáneo de <strong>${drugNames}</strong>. Estos fármacos pertenecen a la misma familia terapéutica. Su combinación no aporta beneficio clínico adicional, es completamente redundante y aumenta exponencialmente el riesgo de efectos secundarios. <strong>Se debe suspender de inmediato uno de ellos</strong>.`
+        body: `Se ha detectado el uso simultáneo de <strong>${drugNames}</strong>. Estos fármacos pertenecen a la misma familia terapéutica. Su combinación no aporta beneficio clínico adicional, es completamente redundante y aumenta el riesgo de efectos secundarios. <strong>Se debe suspender de inmediato uno de ellos</strong>.`
       });
       trace.push(`Incompatibilidad detectada: Duplicidad en la familia ${cls} (${drugNames}).`);
       incomp = true;
     }
   });
+
+  if (hasClass('su') && hasClass('glinida')) {
+    recs.push({ type: 'danger', tag: 'Asociación No Recomendada', title: 'Solapamiento de mecanismo secretagogo', body: `El paciente toma conjuntamente una <strong>Sulfonilurea</strong> y una <strong>Glinida (Repaglinida)</strong>. Esta asociación está explícitamente desaconsejada ya que ambas comparten mecanismo de acción (estimulan secreción de insulina), incrementando gravemente el riesgo de hipoglucemia sin beneficio adicional.` });
+    trace.push('Incompatibilidad detectada: Uso concurrente de SU y Glinida.');
+    incomp = true;
+  }
+
+  if (state.drugs.exenatida && state.fge <= 30) {
+    recs.push({ type: 'danger', tag: 'Contraindicación Renal', title: 'Suspender Exenatida / Lixisenatida', body: `Estos agonistas de GLP-1 requieren eliminación renal y deben evitarse en personas con FGe ≤ 30 ml/min. <strong>Se deben suspender y transicionar a otro arGLP-1 seguro</strong> (ej. semaglutida o dulaglutida).` });
+    trace.push('Contraindicación detectada: Exenatida/Lixisenatida con FG <= 30.');
+    incomp = true;
+  }
 
   if (state.cirrosis) {
       if (state.drugs.metformina) {
@@ -702,8 +725,8 @@ function detectIncompatibilities(recs, trace) {
           recs.push({ type: 'danger', tag: 'Contraindicación Absoluta', title: 'Suspender Pioglitazona', body: `La Pioglitazona presenta riesgo de hepatotoxicidad y está formalmente contraindicada en insuficiencia hepática activa.` });
           incomp = true;
       }
-      if (hasClass('su')) {
-          recs.push({ type: 'danger', tag: 'Contraindicación Absoluta', title: 'Suspender Sulfonilureas / Glinidas', body: `La insuficiencia hepática grave altera el aclaramiento de estos fármacos y reduce la gluconeogénesis, provocando un riesgo inaceptable de hipoglucemias severas y prolongadas.` });
+      if (hasClass('su') || hasClass('glinida')) {
+          recs.push({ type: 'danger', tag: 'Contraindicación Absoluta', title: 'Suspender Secretagogos (SU/Glinidas)', body: `La insuficiencia hepática grave altera el aclaramiento de estos fármacos y reduce la gluconeogénesis, provocando un riesgo inaceptable de hipoglucemias severas y prolongadas.` });
           incomp = true;
       }
   }
@@ -719,13 +742,13 @@ function detectIncompatibilities(recs, trace) {
   if (state.fge < 15 && !state.cirrosis) {
       recs.push({
           type: 'info', tag: 'Nefropatía Terminal', title: 'FGe < 15 ml/min: Opciones preferentes',
-          body: `El paciente presenta un filtrado glomerular severamente reducido (< 15 ml/min). En este estadio pre-diálisis o diálisis, las únicas terapias antidiabéticas recomendadas son: <strong>iDPP-4</strong> (ajustando la dosis según ficha técnica), <strong>Repaglinida</strong>, <strong>Pioglitazona</strong> o <strong>Insulina</strong>.`
+          body: `El paciente presenta un filtrado glomerular severamente reducido (< 15 ml/min). En este estadio pre-diálisis o diálisis, las terapias antidiabéticas recomendadas son: <strong>iDPP-4</strong> (ajustando dosis según ficha técnica), <strong>Repaglinida</strong>, <strong>arGLP-1</strong> (excepto exenatida/lixisenatida), <strong>Pioglitazona</strong> o <strong>Insulina</strong>.`
       });
-      trace.push('FGe < 15 ml/min: Se restringen opciones a iDPP-4, Repaglinida, Pioglitazona o Insulina.');
+      trace.push('FGe < 15 ml/min: Opciones limitadas a iDPP-4, Repaglinida, arGLP-1 seguros, Pioglitazona o Insulina.');
   }
 
   if (state.drugs.metformina && state.fge < 30 && !state.cirrosis) {
-    recs.push({ type: 'danger', tag: 'Contraindicación Absoluta', title: 'Suspender Metformina Inmediatamente', body: `El paciente presenta un Filtrado Glomerular (FGe) de <strong>${state.fge} mL/min</strong>. A estos niveles, la Metformina está formalmente contraindicada por el riesgo severo de acidosis láctica. Se sugiere sustituir la base de tratamiento por fármacos seguros en ERC avanzada (ej. arGLP-1 si FG>=15, iDPP-4 ajustados o insulina).` });
+    recs.push({ type: 'danger', tag: 'Contraindicación Absoluta', title: 'Suspender Metformina Inmediatamente', body: `El paciente presenta un Filtrado Glomerular (FGe) de <strong>${state.fge} mL/min</strong>. A estos niveles, la Metformina está formalmente contraindicada por el riesgo severo de acidosis láctica. Se sugiere sustituir la base de tratamiento por fármacos seguros en ERC avanzada.` });
     trace.push('FGe <30: Retirada de metformina obligatoria.');
     incomp = true;
   } else if (state.drugs.metformina && state.fge < 45) {
@@ -757,20 +780,20 @@ function detectIncompatibilities(recs, trace) {
     incomp = true;
   }
 
-  if (hasClass('su') && state.fragilidad && !state.cirrosis) {
-    recs.push({ type: 'danger', tag: 'Riesgo Geriátrico', title: 'Se recomienda retirar las Sulfonilureas / Glinidas', body: `En pacientes con fragilidad o deterioro, los secretagogos están fuertemente desaconsejados por provocar hipoglucemias severas que derivan en caídas y daño neurológico.` });
-    trace.push('Fragilidad + SU: Incompatibilidad por riesgo de hipoglucemia severa.');
+  if ((hasClass('su') || hasClass('glinida')) && state.fragilidad && !state.cirrosis) {
+    recs.push({ type: 'danger', tag: 'Riesgo Geriátrico', title: 'Se recomienda retirar los Secretagogos (SU/Glinidas)', body: `En pacientes con fragilidad o deterioro, los secretagogos están fuertemente desaconsejados por provocar hipoglucemias severas que derivan en caídas y daño neurológico.` });
+    trace.push('Fragilidad + Secretagogo: Incompatibilidad por riesgo de hipoglucemia severa.');
     incomp = true;
   }
 
-  if (hasClass('su') && !state.fragilidad && !state.cirrosis) {
-    const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'].filter(c => hasClass(c)).length;
-    if (clasesUsadas < 3 && state.fge >= 15) {
+  if ((hasClass('su') || hasClass('glinida')) && !state.fragilidad && !state.cirrosis) {
+    const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'glinida', 'pio'].filter(c => hasClass(c)).length;
+    if (clasesUsadas < 3 && state.fge >= 15 && hasClass('su')) {
       recs.push({
         type: 'warn', tag: 'Uso Prematuro', title: 'Sulfonilureas relegadas a 3º o 4º escalón',
-        body: `El algoritmo no recomienda el uso de <strong>Sulfonilureas o Glinidas</strong> como monoterapia o doble terapia. Se han relegado a situaciones donde se precise un 3º o 4º fármaco tras fracasar otras familias con beneficios cardiorenales y menor riesgo de hipoglucemias. <em>Excepción: Uso de Repaglinida si FG < 15 ml/min.</em>`
+        body: `El algoritmo no recomienda el uso de <strong>Sulfonilureas</strong> como monoterapia o doble terapia. Se han relegado a situaciones donde se precise un 3º o 4º fármaco tras fracasar otras familias con beneficios cardiorenales y menor riesgo de hipoglucemias.`
       });
-      trace.push('Aviso: Uso prematuro de SU/Glinidas en 1ª o 2ª línea detectado.');
+      trace.push('Aviso: Uso prematuro de SU en 1ª o 2ª línea detectado.');
     }
   }
   return incomp;
@@ -849,17 +872,17 @@ function generateRecs(cond, target) {
     conditionHandledIntensification = true;
     trace.push(`Descontrol asintomático >10%. Bifurcación dinámica inyectando ${farmacoPrioritario}.`);
   } 
-  // 3. Discordancia Clínica
+  // 3. Discordancia Clínica (Síntomas pero HbA1c < 8.5)
   else if (state.sintomatico && state.hba1c < 8.5) {
-    recs.push({ type: 'warn', tag: 'Discordancia clínica-analítica', title: 'Investigar antes de intensificar', body: `La HbA1c <strong>${state.hba1c.toFixed(1)} %</strong> no justifica por sí sola la presencia de clínica cardinal. Busque desencadenantes agudos.` });
+    recs.push({ type: 'warn', tag: 'Descompensación Aguda', title: 'Investigar desencadenantes', body: `Paciente con clínica cardinal pero HbA1c < 8,5%. Se recomienda medir cetonuria e investigar desencadenantes agudos (corticoterapia, infecciones, neoplasias intercurrentes) antes de asumir el estado basal del paciente.` });
+    trace.push(`Clínica cardinal con HbA1c < 8.5. Alerta de investigación de desencadenantes emitida.`);
   }
 
   // =====================================================================
   // Evaluación INDEPENDIENTE de Finerenona (ADA 2026)
   // =====================================================================
-  if (state.uacr === 'macro' && state.ras) {
+  if (state.uacr === 'macro' && state.ras && !state.drugs.finerenona) {
     if (state.fge >= 25 && state.potasio <= 5.0) {
-      let dosisInit = state.fge > 60 ? '20 mg/día' : '10 mg/día (titular a 20 mg si potasio ≤ 4,8)';
       let tieneSGLT2 = hasClass('isglt2');
       let inicioSimultaneo = (!tieneSGLT2 && state.fge >= 30 && state.fge <= 90) ? 
         `<br><br><strong>Nota (Rec 11.9):</strong> Puede considerarse la iniciación simultánea de un iSGLT-2 y finerenona (ensayo CONFIDENCE).` : '';
@@ -867,13 +890,14 @@ function generateRecs(cond, target) {
       recs.push({ 
         type: 'add', tag: 'Nefro/Cardioprotección (Evidencia A)', title: 'Se recomienda iniciar Finerenona', 
         body: `Indicado para reducir la progresión de la ERC y los eventos cardiovasculares. El análisis combinado FIDELITY confirmó una reducción del 14% en eventos CV y del 23% en el desenlace renal compuesto.<br>
-        <strong>Dosis sugerida:</strong> ${dosisInit}.<br>
-        <strong>Precaución:</strong> Monitorizar potasio a las 4 semanas. Suspender si > 5,5 mmol/L y reiniciar a 10 mg cuando sea ≤ 5,0 mmol/L.${inicioSimultaneo}` 
+        <strong>Precaución:</strong> Monitorizar potasio a las 4 semanas. Suspender temporalmente si > 5,5 mmol/L.${inicioSimultaneo}` 
       });
-      trace.push('UACR ≥ 100 e IECA/ARA-II: Se añade Finerenona independientemente del control glucémico.');
+      trace.push('UACR ≥ 100 e IECA/ARA-II: Se recomienda iniciar Finerenona (paciente no la toma).');
     } else if (state.potasio > 5.0) {
       recs.push({ type: 'warn', tag: 'Contraindicación Temporal', title: 'Finerenona diferida por Hiperpotasemia', body: `El paciente tiene indicación para Finerenona (UACR ≥ 100 mg/g y uso de IECA/ARA-II), pero su potasio basal es > 5.0 mmol/L. Debe corregir el potasio antes de iniciar terapia.` });
     }
+  } else if (state.drugs.finerenona) {
+    trace.push('Finerenona activa en el tratamiento. Se omite recomendación de inicio.');
   }
 
   // =====================================================================
@@ -918,7 +942,6 @@ function generateRecs(cond, target) {
 
 // ---------------------------------------------------------------------
 // HANDLERS DE COMORBILIDADES
-// Notar la primera línea de guardia en cada uno.
 // ---------------------------------------------------------------------
 
 function handleCirrosis(recs, trace, target) {
@@ -943,7 +966,7 @@ function handleIctus(recs, trace, target) {
   
   if (!tieneGLP) {
     if(state.fge >= 15) {
-      recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar arGLP-1', body: `Para prevención secundaria de <strong>Ictus o AIT</strong>, la evidencia demuestra superioridad de los <strong>arGLP-1</strong>. Como alternativa oral en pacientes con insulinorresistencia, valore <strong>Pioglitazona</strong> (estudio IRIS). Los iSGLT-2 tienen un efecto neutro sobre el ictus isquémico.` });
+      recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar arGLP-1', body: `Para prevención secundaria de <strong>Ictus o AIT</strong>, la evidencia demuestra superioridad de los <strong>arGLP-1</strong> (asegurar FG adecuado si se usa exenatida/lixisenatida). Como alternativa oral en pacientes con insulinorresistencia, valore <strong>Pioglitazona</strong> (estudio IRIS). Los iSGLT-2 tienen un efecto neutro sobre el ictus isquémico.` });
       intensified = true;
     }
   }
@@ -1036,10 +1059,8 @@ function handleERC(recs, trace, target) {
   }
 
   if (state.hba1c > target.upperBound && (tieneSGLT2 || state.fge < 20) && !hasClass('arglp') && !hasClass('argip')) {
-    if (state.fge >= 15) {
-      recs.push({ type: 'add', tag: '2ª línea', title: 'Se recomienda añadir arGLP-1', body: `Especialmente la semaglutida (respaldada por el estudio FLOW) por su fuerte protección renal adicional al SGLT2.` });
+      recs.push({ type: 'add', tag: '2ª línea', title: 'Se recomienda añadir arGLP-1', body: `Especialmente la semaglutida (respaldada por el estudio FLOW) por su fuerte protección renal adicional al SGLT2 (evitar exenatida/lixisenatida si FG ≤ 30).` });
       intensified = true;
-    }
   }
   return intensified;
 }
@@ -1048,10 +1069,9 @@ function handleObesidad(recs, trace, target) {
   if (state.hba1c > 10.0 || (state.sintomatico && state.hba1c >= 8.5)) return true;
   let intensified = false;
   const tieneIncretina = hasClass('arglp') || hasClass('argip');
-  const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'].filter(c => hasClass(c)).length;
+  const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'glinida', 'pio'].filter(c => hasClass(c)).length;
 
   if (!tieneIncretina) {
-    if(state.fge >= 15) {
       if (clasesUsadas > 0 || state.hba1c >= 8.0) {
         recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda asociar arGLP-1 o arGIP/GLP-1', body: `Para pacientes con obesidad que no logran control inicial o debutan muy descompensados, la terapia incretínica es prioritaria por las drásticas pérdidas de peso (10-20%) que atacan la resistencia a la insulina.` });
         intensified = true;
@@ -1061,7 +1081,6 @@ function handleObesidad(recs, trace, target) {
         trace.push('Paciente virgen con obesidad y descontrol leve/moderado (<8.0%). Se prioriza inicio con Metformina+Dieta antes de exigir inyectables de primera línea.');
         intensified = true; 
       }
-    }
   }
   
   if (tieneIncretina && !state.drugs.metformina && state.fge >= 30 && state.hba1c > target.upperBound) {
@@ -1086,14 +1105,12 @@ function handleHepatica(recs, trace, target) {
   const tienePio = state.drugs.pioglitazona;
   
   if (!tieneSemaglutida) {
-    if(state.fge >= 15) {
       if (tieneIncretinaB) {
         recs.push({ type: 'info', tag: 'Optimización Hepática', title: 'Considerar cambio a Semaglutida', body: `El paciente toma una incretina de Nivel B para MASH. La <strong>Semaglutida</strong> cuenta con Nivel de Evidencia A (estudio ESSENCE) y aprobación FDA para fibrosis moderada-avanzada, logrando resolución en el 62,9% de casos. Considere el cambio si el objetivo principal es histológico.` });
       } else {
         recs.push({ type: 'add', tag: 'Añadir 1ª línea (Nivel A)', title: 'Se recomienda iniciar Semaglutida', body: `En pacientes con MASH y fibrosis (o alto riesgo), la <strong>Semaglutida</strong> es el único tratamiento con Nivel de Evidencia A (estudio ESSENCE). Quedan como Nivel B la Tirzepatida, otros arGLP-1 y la Pioglitazona.` });
         intensified = true;
       }
-    }
   }
   
   if ((tieneSemaglutida || tieneIncretinaB) && !tienePio && state.hba1c > target.upperBound && !state.ic) {
@@ -1112,10 +1129,9 @@ function handleHepatica(recs, trace, target) {
 function handleFragilidad(recs, trace, target) {
   if (state.fragGrade === 'muyGrave') {
     recs.push({ type: 'warn', tag: 'Final de vida', title: 'Se recomienda desintensificación estructurada', body: `El objetivo es puramente paliativo. Deben retirarse todas las medidas para prevenir complicaciones crónicas y ajustar fármacos al mínimo viable para evitar clínica aguda.` });
-    return true; // Salimos directamente en paliativos, no queremos ni insulina ni nada de alta potencia.
+    return true;
   }
   
-  // Guard clause para fragilidad moderada (permitimos que el top-level mande insulina si hace falta)
   if (state.hba1c > 10.0 || (state.sintomatico && state.hba1c >= 8.5)) return true;
   
   if (!hasClass('idpp4') && !hasClass('arglp') && !hasClass('argip')) {
@@ -1125,10 +1141,9 @@ function handleFragilidad(recs, trace, target) {
 }
 
 function applyGeneralIntensification(recs, trace, target, hasCriticalConflict) {
-  // Guard: Si top-level ya manejó el descontrol agudo, abortamos aquí.
   if (state.hba1c > 10.0 || (state.sintomatico && state.hba1c >= 8.5)) return;
 
-  const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'].filter(c => hasClass(c)).length;
+  const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'glinida', 'pio'].filter(c => hasClass(c)).length;
   const availableADNIs = getAvailableADNIs(state);
   
   let optionsText = '';
@@ -1149,7 +1164,7 @@ function applyGeneralIntensification(recs, trace, target, hasCriticalConflict) {
       if (state.fge >= 30) {
         recs.push({ type: 'add', tag: 'Inicio Intensivo (redGDPS)', title: 'Se recomienda iniciar con Doble Terapia', body: `Al presentar HbA1c ≥ 8,5 % asintomática, el algoritmo ordena <strong>no empezar con monoterapia</strong>. Inicie directamente combinando <strong>Metformina</strong> con un segundo ADNI de alta potencia (iSGLT-2 o incretinas). La insulina queda reservada para casos sintomáticos.` });
       } else {
-        recs.push({ type: 'add', tag: 'Inicio Intensivo Seguro', title: 'Se recomienda Doble Terapia ajustada al FG', body: `Con HbA1c ≥ 8,5 % asintomática se requiere Doble Terapia inicial, pero la Metformina está contraindicada. Se recomienda asociar fármacos seguros según FG (ej. iDPP-4 + arGLP-1 si FG≥15).` });
+        recs.push({ type: 'add', tag: 'Inicio Intensivo Seguro', title: 'Se recomienda Doble Terapia ajustada al FG', body: `Con HbA1c ≥ 8,5 % asintomática se requiere Doble Terapia inicial, pero la Metformina está contraindicada. Se recomienda asociar fármacos seguros según FG (ej. iDPP-4 + arGLP-1).` });
       }
       trace.push('HbA1c 8.5-10.0 asintomático virgen: Inicio obligatorio con Doble terapia.');
     } else if (clasesUsadas === 1) {
