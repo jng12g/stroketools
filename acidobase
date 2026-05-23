@@ -316,6 +316,29 @@
           <div class="field-hint" id="fgeHint" style="margin-top:4px; font-size:11.5px; line-height:1.2;"></div>
         </div>
       </div>
+
+      <!-- NUEVA FILA ADA 2026: Finerenona / Potasio / UACR -->
+      <div class="row" style="margin-top: 14px;">
+        <div class="field">
+          <label>Albuminuria (UACR)</label>
+          <select id="uacr">
+            <option value="normal">&lt; 30 mg/g (Normal)</option>
+            <option value="micro">30 - 100 mg/g</option>
+            <option value="macro">≥ 100 mg/g</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Potasio sérico (mmol/L)</label>
+          <input type="number" id="potasio" min="2.0" max="7.0" value="4.5" step="0.1">
+        </div>
+        <div class="field">
+          <label>¿Toma IECA o ARA-II?</label>
+          <select id="ras">
+            <option value="si" selected>Sí</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+      </div>
     </div>
 
     <div class="section">
@@ -537,6 +560,7 @@
 
 const state = {
   hba1c: 7.5, edad: 65, tiempoDx: 5, fge: 80,
+  uacr: 'normal', potasio: 4.5, ras: true,
   sintomatico: false, cirrosis: false, ic: false, 
   ictus: false, ecvCoronaria: false, rcvAlto: false,
   erc: false, obesidad: false, hepatica: false, fragilidad: false, fragGrade: 'moderadaGrave', deterioro: false,
@@ -592,17 +616,17 @@ function getTarget() {
     return { target: 8.5, label: '7,5 - 8,5 %', rationale: 'Fragilidad moderada-grave (deterioro cognitivo/funcional). Especial precaución ante hipoglucemias.', upperBound: 8.5 };
   }
   
-  // LOGICA ESTRATIFICADA (OPENEVIDENCE TABLE)
+  // LOGICA ESTRATIFICADA
   if (!state.fragilidad && sinComplicaciones) {
     if (state.edad <= 40 && state.tiempoDx <= 5) {
-        return { target: 6.5, label: '≤ 6,5 %', rationale: 'Adulto joven (≤ 40 años) con diagnóstico reciente (≤ 5 años) y sin comorbilidades: objetivo estricto (memoria metabólica).', upperBound: 6.5 };
+        return { target: 6.5, label: '≤ 6,5 %', rationale: 'Adulto joven (≤ 40 años) con diagnóstico reciente (≤ 5 años) y sin comorbilidades: objetivo estricto.', upperBound: 6.5 };
     } else if (state.edad > 40 && state.edad <= 65) {
-        return { target: 7.0, label: '≤ 7,0 %', rationale: 'Adulto (40-65 años) sin comorbilidades. Objetivo estándar para prevención microvascular equilibrando el riesgo de hipoglucemia.', upperBound: 7.0 };
+        return { target: 7.0, label: '≤ 7,0 %', rationale: 'Adulto (40-65 años) sin comorbilidades. Objetivo estándar equilibrando el riesgo de hipoglucemia.', upperBound: 7.0 };
     } else if (state.edad > 65) {
          if (state.tiempoDx > 10) {
-             return { target: 8.0, label: '7,0 - 8,0 %', rationale: 'Adulto mayor (> 65 años) con diabetes de larga evolución. Se prioriza evitar la hipoglucemia sobre el control estricto.', upperBound: 8.0 };
+             return { target: 8.0, label: '7,0 - 8,0 %', rationale: 'Adulto mayor (> 65 años) con diabetes de larga evolución. Se prioriza evitar la hipoglucemia.', upperBound: 8.0 };
          } else {
-             return { target: 7.5, label: '≤ 7,5 %', rationale: 'Adulto mayor (> 65 años) con buen estado funcional. Equilibrio entre beneficio microvascular y riesgo de hipoglucemia.', upperBound: 7.5 };
+             return { target: 7.5, label: '≤ 7,5 %', rationale: 'Adulto mayor (> 65 años) con buen estado funcional. Equilibrio entre beneficio y riesgo.', upperBound: 7.5 };
          }
     }
   }
@@ -619,7 +643,7 @@ function getAvailableADNIs(state) {
 
   if (state.cirrosis) {
      if (!hasDPP4) options.push('<strong>iDPP-4</strong> (específicamente Linagliptina por su excreción biliar).');
-     return options; // Insulina se recomienda en bloque aparte para cirrosis.
+     return options;
   }
 
   if (!hasClass('met') && state.fge >= 30) options.push('<strong>Metformina</strong> (base del tratamiento, económica y probada).');
@@ -699,9 +723,13 @@ function detectIncompatibilities(recs, trace) {
     recs.push({ type: 'warn', tag: 'Ajuste de dosis', title: 'Se recomienda reducir la dosis de Metformina', body: `Con un FGe de ${state.fge} mL/min (en el rango 30-45), la Metformina exige precaución extrema. Se debe reducir obligatoriamente su dosis al 50% de la máxima tolerada previamente.` });
   }
 
+  // NUEVA LÓGICA ADA 2026: Mantenimiento de iSGLT-2 con FGe < 20
   if (hasClass('isglt2') && state.fge < 20) {
-    recs.push({ type: 'danger', tag: 'Reevaluación Clínica', title: 'Atención al uso de iSGLT-2 con FGe < 20', body: `El inicio de <strong>iSGLT-2</strong> no está aprobado con FGe < 20 mL/min. Si ya los tomaba previamente para protección renal y su función ha decaído, reevalúe con nefrología su continuidad de forma estrictamente individualizada.` });
-    incomp = true;
+    recs.push({ 
+      type: 'ok', tag: 'Mantenimiento Seguro', title: 'Continuar iSGLT-2 (FGe < 20)', 
+      body: `La ADA 2026 confirma explícitamente la seguridad y el beneficio renal de los iSGLT-2 en la ERC avanzada. Pueden y deben mantenerse de forma segura incluso con FG < 20 mL/min/1.73 m², <strong>siempre y cuando el paciente no requiera terapia de diálisis.</strong>` 
+    });
+    trace.push('FGe < 20: Se valida el mantenimiento del iSGLT-2 activo según ADA 2026.');
   }
 
   if (state.drugs.pioglitazona && state.ic) {
@@ -744,23 +772,23 @@ function renderOptimizedState(cond, state, target) {
     let justificacion = `El paciente ha alcanzado su objetivo glucémico individualizado (<strong>${state.hba1c.toFixed(1)} %</strong> para una meta de <strong>${target.label}</strong>). El esquema actual se considera idóneo y optimizado por los siguientes motivos clínicos:<br><ul>`;
 
     if (cond.id === 'cirrosis') {
-      justificacion += `<li><strong>Seguridad Hepática (Cirrosis):</strong> El paciente mantiene un control adecuado apoyándose en terapias de alta seguridad metabólica en contexto de insuficiencia hepática grave, sin incurrir en fármacos hepatotóxicos o de riesgo láctico.</li>`;
+      justificacion += `<li><strong>Seguridad Hepática (Cirrosis):</strong> El paciente mantiene un control adecuado apoyándose en terapias de alta seguridad metabólica en contexto de insuficiencia hepática grave.</li>`;
     } else if (cond.id === 'ictus') {
-      justificacion += `<li><strong>Protección Cerebrovascular:</strong> Al presentar ictus/AIT previo, el esquema integra terapias de alta eficacia si fuera preciso, y controla la glucemia sin añadir riesgos adicionales.</li>`;
+      justificacion += `<li><strong>Protección Cerebrovascular:</strong> Al presentar ictus/AIT previo, el esquema integra terapias de alta eficacia si fuera preciso, y controla la glucemia sin añadir riesgos.</li>`;
     } else if (cond.id === 'ecvCoronaria') {
-      justificacion += `<li><strong>Protección Cardiovascular:</strong> Al presentar alto riesgo o evento coronario/periférico, el esquema ya integra terapias cardioprotectoras que han demostrado disminuir los eventos adversos mayores (MACE).</li>`;
+      justificacion += `<li><strong>Protección Cardiovascular:</strong> Al presentar alto riesgo o evento coronario/periférico, el esquema ya integra terapias cardioprotectoras que disminuyen los eventos adversos.</li>`;
     } else if (cond.id === 'ic') {
-      justificacion += `<li><strong>Beneficio Pronóstico (IC):</strong> El paciente está recibiendo tratamiento con iSGLT-2, familias con nivel de evidencia 1A para reducir drásticamente las hospitalizaciones por insuficiencia cardíaca y la mortalidad cardiovascular.</li>`;
+      justificacion += `<li><strong>Beneficio Pronóstico (IC):</strong> El paciente está recibiendo tratamiento que reduce drásticamente las hospitalizaciones por insuficiencia cardíaca y la mortalidad CV.</li>`;
     } else if (cond.id === 'erc') {
-      justificacion += `<li><strong>Nefroprotección:</strong> El régimen incluye fármacos de primera línea para la enfermedad renal, que ralentizan significativamente la caída del filtrado glomerular y la progresión a nefropatía terminal.</li>`;
+      justificacion += `<li><strong>Nefroprotección:</strong> El régimen incluye fármacos de primera línea para la enfermedad renal, que ralentizan significativamente la progresión a nefropatía terminal.</li>`;
     } else if (cond.id === 'obesidad') {
       justificacion += `<li><strong>Control Ponderal Activo:</strong> Teniendo obesidad como condicionante principal, el esquema actual atiende a la pérdida de peso o estabilización metabólica eficazmente.</li>`;
     } else if (cond.id === 'hepatica') {
       justificacion += `<li><strong>Mejora Histológica Hepática:</strong> El tratamiento incluye opciones que han evidenciado capacidad para revertir o frenar la progresión de la esteatohepatitis metabólica.</li>`;
     } else if (cond.id === 'fragilidad') {
-      justificacion += `<li><strong>Seguridad Geriátrica:</strong> En base a su grado de fragilidad, la prioridad es la seguridad y evitar hipoglucemias, preservando su funcionalidad y calidad de vida.</li>`;
+      justificacion += `<li><strong>Seguridad Geriátrica:</strong> En base a su grado de fragilidad, la prioridad es la seguridad y evitar hipoglucemias.</li>`;
     } else {
-      justificacion += `<li><strong>Eficacia y Tolerabilidad:</strong> El paciente no presenta complicaciones mayores, logrando un excelente control metabólico mantenido a lo largo del tiempo.</li>`;
+      justificacion += `<li><strong>Eficacia y Tolerabilidad:</strong> El paciente no presenta complicaciones mayores, logrando un excelente control metabólico mantenido.</li>`;
     }
 
     justificacion += `</ul><br><strong>Conducta a seguir:</strong> No proceden cambios farmacológicos en este momento. Se recomienda mantener el esquema vigente y citar al paciente para su control clínico rutinario.`;
@@ -870,7 +898,7 @@ function handleIctus(recs, trace, target) {
   }
   
   if (!state.drugs.metformina && state.fge >= 30 && state.hba1c > target.upperBound) {
-    recs.push({ type: 'info', tag: 'Sinergia', title: 'Considerar Metformina', body: `Se aconseja acompañar de Metformina por su efecto glucémico complementario y bajo coste, ya que la evidencia de cardioprotección se generó mayoritariamente en combinación con ella, aunque las guías permiten iniciar protección vascular independientemente de la HbA1c.` });
+    recs.push({ type: 'info', tag: 'Sinergia', title: 'Considerar Metformina', body: `Se aconseja acompañar de Metformina por su efecto glucémico complementario y bajo coste.` });
   } else if (!state.drugs.metformina && state.fge >= 30 && state.hba1c <= target.upperBound && (tieneGLP || tienePio)) {
     recs.push({ type: 'info', tag: 'Metformina no prioritaria', title: 'No se precisa añadir Metformina', body: `El paciente ya alcanza su objetivo glucémico con el tratamiento actual. La protección cerebrovascular se mantiene sin necesidad de añadir Metformina.` });
   }
@@ -892,7 +920,7 @@ function handleECVCoronaria(recs, trace, target) {
   }
   
   if (!state.drugs.metformina && state.fge >= 30 && state.hba1c > target.upperBound) {
-    recs.push({ type: 'info', tag: 'Sinergia', title: 'Considerar Metformina', body: `Se aconseja acompañar de Metformina por su efecto glucémico complementario y bajo coste. La evidencia de cardioprotección se generó mayoritariamente en combinación con ella.` });
+    recs.push({ type: 'info', tag: 'Sinergia', title: 'Considerar Metformina', body: `Se aconseja acompañar de Metformina por su efecto glucémico complementario y bajo coste.` });
   } else if (!state.drugs.metformina && state.fge >= 30 && state.hba1c <= target.upperBound && tieneCardio) {
     recs.push({ type: 'info', tag: 'Metformina no prioritaria', title: 'No se precisa añadir Metformina', body: `El paciente ya alcanza su objetivo glucémico con el cardioprotector actual.` });
   }
@@ -907,6 +935,17 @@ function handleECVCoronaria(recs, trace, target) {
 function handleIC(recs, trace, target) {
   let intensified = false;
   const tieneSGLT2 = hasClass('isglt2');
+  const tieneIncretina = hasClass('arglp') || hasClass('argip');
+  
+  // NUEVA LÓGICA ADA 2026: Obesidad + IC (Ensayo SUMMIT)
+  if (state.obesidad && !tieneIncretina) {
+    recs.push({ 
+      type: 'add', tag: 'Evidencia A (IC + Obesidad)', title: 'Se recomienda iniciar arGIP/GLP-1 o arGLP-1', 
+      body: `El ensayo SUMMIT y la ADA 2026 establecen que, en pacientes con DM2, obesidad e Insuficiencia Cardíaca (FE preservada), el tratamiento <strong>debe incluir un agonista dual o arGLP-1 independientemente del valor de HbA1c</strong> para mejorar los síntomas y reducir eventos.` 
+    });
+    intensified = true;
+  }
+
   if (!tieneSGLT2) {
     if(state.fge >= 20) {
         recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar un iSGLT-2', body: `Pilar fundamental (independiente de HbA1c) por reducción de mortalidad e ingresos por IC.` });
@@ -933,19 +972,41 @@ function handleERC(recs, trace, target) {
   let intensified = false;
   const tieneSGLT2 = hasClass('isglt2');
   
+  // 1. iSGLT-2
   if (state.fge >= 20 && !tieneSGLT2) {
-    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar iSGLT-2', body: `Fármacos prioritarios en enfermedad renal por su capacidad para ralentizar la caída del FG y la progresión a diálisis.` });
+    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar iSGLT-2', body: `Pilar fundamental en enfermedad renal crónica para ralentizar la caída del FG y la progresión a diálisis.` });
     intensified = true;
   }
   
+  // 2. NUEVA LÓGICA ADA 2026: Finerenona (Rec 11.8 y 11.9)
+  if (state.uacr === 'macro' && state.ras) {
+    if (state.fge >= 25 && state.potasio <= 5.0) {
+      let dosisInit = state.fge > 60 ? '20 mg/día' : '10 mg/día (titular a 20 mg si potasio ≤ 4,8)';
+      let inicioSimultaneo = (!tieneSGLT2 && state.fge >= 30 && state.fge <= 90) ? 
+        `<br><br><strong>Nota (Rec 11.9):</strong> Puede considerarse la iniciación simultánea de un iSGLT-2 y finerenona (ensayo CONFIDENCE).` : '';
+
+      recs.push({ 
+        type: 'add', tag: 'Nefro/Cardioprotección (Evidencia A)', title: 'Se recomienda iniciar Finerenona', 
+        body: `Indicado para reducir la progresión de la ERC y los eventos cardiovasculares. El análisis combinado FIDELITY confirmó una reducción del 14% en eventos cardiovasculares y del 23% en el desenlace renal compuesto.<br>
+        <strong>Dosis sugerida:</strong> ${dosisInit}.<br>
+        <strong>Precaución:</strong> Monitorizar potasio a las 4 semanas de inicio o cambio. Suspender si > 5,5 mmol/L y reiniciar a 10 mg cuando sea ≤ 5,0 mmol/L.${inicioSimultaneo}` 
+      });
+      intensified = true;
+    } else if (state.potasio > 5.0) {
+      recs.push({ type: 'warn', tag: 'Contraindicación Temporal', title: 'Finerenona diferida por Hiperpotasemia', body: `El paciente tiene indicación teórica para Finerenona (UACR ≥ 100 mg/g y uso de IECA/ARA-II), pero su potasio basal es > 5.0 mmol/L. Debe corregir el potasio antes de iniciar terapia.` });
+    }
+  }
+
+  // 3. Metformina basal
   if (!state.drugs.metformina && state.fge >= 30 && state.hba1c > target.upperBound) {
-    recs.push({ type: 'add', tag: 'Sinergia Basal', title: 'Se recomienda asociar Metformina', body: `Para optimizar el control glucémico, se recomienda añadir Metformina como base terapéutica complementaria (Nota 6 del algoritmo).` });
+    recs.push({ type: 'add', tag: 'Sinergia Basal', title: 'Se recomienda asociar Metformina', body: `Para optimizar el control glucémico, se recomienda añadir Metformina como base complementaria.` });
     intensified = true;
   }
 
+  // 4. arGLP-1
   if (state.hba1c > target.upperBound && (tieneSGLT2 || state.fge < 20) && !hasClass('arglp') && !hasClass('argip')) {
     if (state.fge >= 15) {
-      recs.push({ type: 'add', tag: '2ª línea', title: 'Se recomienda añadir arGLP-1', body: `Especialmente la semaglutida (respaldada por el estudio FLOW) por su fuerte protección renal adicional al SGLT2 (Nota 9 del algoritmo: se pueden prescribir si FG ≥ 15 ml/min).` });
+      recs.push({ type: 'add', tag: '2ª línea', title: 'Se recomienda añadir arGLP-1', body: `Especialmente la semaglutida (respaldada por el estudio FLOW) por su fuerte protección renal adicional al SGLT2.` });
       intensified = true;
     }
   }
@@ -959,13 +1020,12 @@ function handleObesidad(recs, trace, target) {
 
   if (!tieneIncretina) {
     if(state.fge >= 15) {
-      // Lógica Modo Escalón: 
       if (clasesUsadas > 0 || state.hba1c >= 8.0) {
         recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda asociar arGLP-1 o arGIP/GLP-1', body: `Para pacientes con obesidad que no logran control inicial o debutan muy descompensados, la terapia incretínica es prioritaria por las drásticas pérdidas de peso (10-20%) que atacan la resistencia a la insulina.` });
         intensified = true;
       } else {
-        recs.push({ type: 'ok', tag: 'Inicio Conservador', title: 'Iniciar Metformina + Dieta', body: `En pacientes con obesidad y descontrol glucémico leve/moderado (HbA1c < 8.0%), el pilar inicial sigue siendo la optimización del estilo de vida (dieta/ejercicio) junto con Metformina.` });
-        recs.push({ type: 'info', tag: 'Alternativa Premium', title: 'Considerar GLP-1 RA inicial (opcional)', body: `Si el paciente prioriza la pérdida de peso significativa y no existen barreras de acceso/financiación, las guías recientes (ADA/AACE) avalan el inicio temprano con arGLP-1 o Tirzepatida para abordar la enfermedad metabólica de raíz.` });
+        recs.push({ type: 'ok', tag: 'Inicio Conservador', title: 'Iniciar Metformina + Dieta', body: `En pacientes con obesidad y descontrol glucémico leve/moderado (HbA1c < 8.0%), el pilar inicial sigue siendo la optimización del estilo de vida junto con Metformina.` });
+        recs.push({ type: 'info', tag: 'Alternativa Premium', title: 'Considerar GLP-1 RA inicial (opcional)', body: `Si el paciente prioriza la pérdida de peso significativa, las guías avalan el inicio temprano con arGLP-1 o Tirzepatida.` });
         trace.push('Paciente virgen con obesidad y descontrol leve/moderado (<8.0%). Se prioriza inicio con Metformina+Dieta antes de exigir inyectables de primera línea.');
         intensified = true; 
       }
@@ -973,7 +1033,7 @@ function handleObesidad(recs, trace, target) {
   }
   
   if (tieneIncretina && !state.drugs.metformina && state.fge >= 30 && state.hba1c > target.upperBound) {
-    recs.push({ type: 'add', tag: 'Sinergia Basal', title: 'Se recomienda asociar Metformina', body: `Para optimizar el control glucémico de base, se recomienda añadir Metformina (Nota 6 del algoritmo).` });
+    recs.push({ type: 'add', tag: 'Sinergia Basal', title: 'Se recomienda asociar Metformina', body: `Para optimizar el control glucémico de base, se recomienda añadir Metformina.` });
     intensified = true;
   }
 
@@ -986,26 +1046,35 @@ function handleObesidad(recs, trace, target) {
   return intensified;
 }
 
+// NUEVA LÓGICA ADA 2026: Jerarquización de Semaglutida y Terapia Combinada en MASH
 function handleHepatica(recs, trace, target) {
   let intensified = false;
-  const tieneIncretina = hasClass('arglp') || hasClass('argip');
+  const tieneSemaglutida = state.drugs.semaglutida;
+  const tieneIncretinaB = (hasClass('arglp') && !tieneSemaglutida) || hasClass('argip');
+  const tienePio = state.drugs.pioglitazona;
   
-  if (!tieneIncretina) {
+  if (!tieneSemaglutida) {
     if(state.fge >= 15) {
-      recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar arGLP-1 o arGIP/GLP-1', body: `Indicados en hígado graso metabólico por la demostrada reversión histológica de la esteatohepatitis.` });
-      intensified = true;
+      if (tieneIncretinaB) {
+        recs.push({ type: 'info', tag: 'Optimización Hepática', title: 'Considerar cambio a Semaglutida', body: `El paciente toma una incretina de Nivel B para MASH. La <strong>Semaglutida</strong> cuenta con Nivel de Evidencia A (estudio ESSENCE) y aprobación FDA para fibrosis moderada-avanzada, logrando resolución en el 62,9% de casos. Considere el cambio si el objetivo principal es histológico.` });
+      } else {
+        recs.push({ type: 'add', tag: 'Añadir 1ª línea (Nivel A)', title: 'Se recomienda iniciar Semaglutida', body: `En pacientes con MASH y fibrosis (o alto riesgo), la <strong>Semaglutida</strong> es el único tratamiento con Nivel de Evidencia A (estudio ESSENCE). Quedan como Nivel B la Tirzepatida, otros arGLP-1 y la Pioglitazona.` });
+        intensified = true;
+      }
     }
   }
   
-  if (!state.drugs.metformina && state.fge >= 30 && !state.cirrosis && state.hba1c > target.upperBound) {
-    recs.push({ type: 'add', tag: 'Sinergia Basal', title: 'Se recomienda asociar Metformina', body: `Para optimizar el control glucémico basal, se recomienda añadir Metformina (Nota 6 del algoritmo).` });
+  // Terapia combinada (Sinergia)
+  if ((tieneSemaglutida || tieneIncretinaB) && !tienePio && state.hba1c > target.upperBound && !state.ic) {
+    recs.push({ type: 'add', tag: 'Sinergia Hepática', title: 'Considerar terapia combinada con Pioglitazona', body: `La ADA 2026 sugiere que la combinación de <strong>arGLP-1 + Pioglitazona</strong> puede considerarse por sus potenciales efectos beneficiosos aditivos sobre la esteatohepatitis.` });
     intensified = true;
   }
 
-  if (state.hba1c > target.upperBound && tieneIncretina && !hasClass('isglt2') && !state.drugs.pioglitazona) {
-    recs.push({ type: 'add', tag: 'Intensificar (2º Escalón)', title: 'Se recomienda añadir iSGLT-2 o Pioglitazona', body: `Si el control glucémico fracasa a pesar de la terapia incretínica de base, el iSGLT-2 y la Pioglitazona (ambos con beneficios hepáticos avalados) son las intensificaciones de elección.` });
+  if (!state.drugs.metformina && state.fge >= 30 && !state.cirrosis && state.hba1c > target.upperBound) {
+    recs.push({ type: 'add', tag: 'Sinergia Basal', title: 'Se recomienda asociar Metformina', body: `Para optimizar el control glucémico basal, se recomienda añadir Metformina.` });
     intensified = true;
   }
+
   return intensified;
 }
 
@@ -1020,8 +1089,6 @@ function handleFragilidad(recs, trace, target) {
 }
 
 function applyGeneralIntensification(recs, trace, target, hasCriticalConflict) {
-  // CORRECCIÓN: Si el paciente tiene clínica cardinal y HbA1c >= 8.5, 
-  // ya se ha pautado insulina. Abortamos la vía asintomática para no duplicar.
   if (state.sintomatico && state.hba1c >= 8.5) return;
 
   const clasesUsadas = ['met', 'isglt2', 'arglp', 'argip', 'idpp4', 'su', 'pio'].filter(c => hasClass(c)).length;
@@ -1040,7 +1107,6 @@ function applyGeneralIntensification(recs, trace, target, hasCriticalConflict) {
     return;
   }
 
-  // ZONA GRIS: ADA vs redGDPS (>10% asintomático)
   if (state.hba1c > 10.0) {
     let opcionA = '';
     if (clasesUsadas === 0) {
@@ -1063,7 +1129,6 @@ function applyGeneralIntensification(recs, trace, target, hasCriticalConflict) {
     return;
   }
 
-  // DESCONTROL GRAVE: redGDPS pura (8.5 - 10.0 asintomático)
   if (state.hba1c >= 8.5 && state.hba1c <= 10.0) {
     if (clasesUsadas === 0) {
       if (state.fge >= 30) {
@@ -1085,7 +1150,6 @@ function applyGeneralIntensification(recs, trace, target, hasCriticalConflict) {
     return;
   } 
 
-  // DESCONTROL MODERADO (HbA1c > objetivo pero < 8.5)
   if (state.hba1c > target.upperBound) {
     if (clasesUsadas === 0) {
       if (state.fge >= 30) {
@@ -1131,6 +1195,12 @@ function update() {
   state.edad = parseInt(document.getElementById('edad').value) || 0;
   state.tiempoDx = parseFloat(document.getElementById('tiempoDx').value) || 0;
   state.fge = parseFloat(document.getElementById('fge').value) || 0;
+  
+  // Novedades ADA 2026: Finerenona Inputs
+  state.uacr = document.getElementById('uacr').value;
+  state.potasio = parseFloat(document.getElementById('potasio').value);
+  state.ras = document.getElementById('ras').value === 'si';
+
   state.sintomatico = document.getElementById('sintomatico').checked;
   state.cirrosis = document.getElementById('cirrosis').checked;
   state.ictus = document.getElementById('ictus').checked;
@@ -1206,6 +1276,12 @@ function resetAll() {
   document.getElementById('edad').value = 65;
   document.getElementById('tiempoDx').value = 5;
   document.getElementById('fge').value = 80;
+  
+  // Resetear nuevos campos ADA 2026
+  document.getElementById('uacr').value = 'normal';
+  document.getElementById('potasio').value = 4.5;
+  document.getElementById('ras').value = 'si';
+
   document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
   const fragModGrave = document.querySelector('input[name="fragGrade"][value="moderadaGrave"]');
   if (fragModGrave) fragModGrave.checked = true;
