@@ -1,0 +1,300 @@
+<div id="seccion-fibrinolisis" class="modulo-ictus">
+    
+    <div class="card alerta-presion">
+        <h3>Manejo de Presión Arterial</h3>
+        <div class="grid-2">
+            <div class="pa-box pre-tx">
+                <span class="label">Objetivo PRE-Fibrinólisis:</span>
+                <span class="valor">&lt; 185 / 110 mm Hg</span> 
+                <p class="desc">Reducir la PA antes de iniciar el bolo para minimizar complicaciones hemorrágicas.</p>
+            </div>
+            <div class="pa-box post-tx">
+                <span class="label">Objetivo POST-Fibrinólisis (24h):</span>
+                <span class="valor">&lt; 180 / 105 mm Hg</span> 
+                <p class="desc">Mantener durante al menos las primeras 24 horas.</p>
+            </div>
+        </div>
+        <div class="nota-seguridad contraindicacion-3">
+            <strong>COR 3 (Sin Beneficio / Perjudicial):</strong> No se recomienda la reducción intensiva de la PAS a objetivos &lt; 140 mm Hg, ya que no mejora el resultado funcional.
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Calculadora de Dosis (Guía 2026)</h3>
+        <div class="input-grupo">
+            <label for="peso-paciente">Peso del paciente (kg):</label>
+            <input type="number" id="peso-paciente" placeholder="Ej. 75" min="20" max="200" oninput="calcularDosisIctus()">
+            <span class="ayuda-input">* No retrase la trombólisis para obtener el peso exacto; use estimaciones clínicas si es crítico[cite: 468].</span>
+        </div>
+
+        <div class="tabs-dosificacion">
+            <div class="tab-farmaco elegido" id="card-tenecteplase">
+                <h4>Tenecteplase (TNK) <span class="badge-recomendado">Preferido</span></h4>
+                <p class="directriz">Dosis única en bolo (administrar en 5–10 segundos)[cite: 511, 464].</p>
+                <div class="resultado-dosis">
+                    <div><strong>Dosis Total:</strong> <span id="tnk-dosis">-</span> mg</div>
+                    <div><strong>Volumen a inyectar:</strong> <span id="tnk-volumen">-</span> mL</div>
+                </div>
+                <p class="nota-farmaco">* Dosis fija por rangos de peso a 0.25 mg/kg (Máximo 25 mg)[cite: 505, 466]. No se recomienda la dosis de 0.4 mg/kg[cite: 505].</p>
+            </div>
+
+            <div class="tab-farmaco" id="card-alteplase">
+                <h4>Alteplase (rt-PA)</h4>
+                <p class="directriz">Dosis total: 0.9 mg/kg (Máximo 90 mg)[cite: 464, 507].</p>
+                <div class="resultado-dosis">
+                    <div><strong>Bolo Inicial (1 min):</strong> <span id="rtpa-bolo">-</span> mg</div>
+                    <div><strong>Infusión Continua (60 min):</strong> <span id="rtpa-infusion">-</span> mg</div>
+                    <div class="total-resaltado"><strong>Dosis Total:</strong> <span id="rtpa-total">-</span> mg</div>
+                </div>
+                <p class="nota-farmaco">* El 10% de la dosis se administra en bolo en 1 minuto, y el resto en infusión continua durante 1 hora[cite: 464, 507].</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Ventana Temporal y Selección por Neuroimagen</h3>
+        <div class="selector-ventana">
+            <label class="opcion-ventana">
+                <input type="radio" name="ventana" value="estandar" checked onclick="actualizarCriteriosImagen()">
+                <span>&lt; 4.5 horas (Inicio conocido)</span>
+            </label>
+            <label class="opcion-ventana">
+                <input type="radio" name="ventana" value="despertar" onclick="actualizarCriteriosImagen()">
+                <span>Ictus del despertar / Hora desconocida (&lt; 4.5h detección)</span>
+            </label>
+            <label class="opcion-ventana">
+                <input type="radio" name="ventana" value="extendida" onclick="actualizarCriteriosImagen()">
+                <span>Ventana extendida (4.5 a 24 horas)</span>
+            </label>
+        </div>
+
+        <div id="criterio-imagen-resultado" class="panel-info">
+            </div>
+    </div>
+
+    <div class="card">
+        <h3>Lista de Verificación de Contraindicaciones</h3>
+        <p class="instrucciones">Evalúe de forma individualizada si coexisten factores de riesgo[cite: 622].</p>
+        
+        <details class="bloque-contraindicacion absoluta">
+            <summary><strong>Alto Riesgo de Daño / Contraindicaciones Absolutas</strong></summary>
+            <ul>
+                <li>Neuroimagen (TC/RM) con evidencia de hemorragia intracraneal aguda[cite: 629].</li>
+                <li>TC que muestra regiones de hipodensidad clara extensa responsable de los síntomas[cite: 629].</li>
+                <li>TCE moderado a grave en los últimos 14 días[cite: 629].</li>
+                <li>Cirugía intracraneal o espinal (Neurocirugía) &lt; 14 días[cite: 629].</li>
+                <li>Lesión de la médula espinal aguda dentro de los últimos 3 meses[cite: 629].</li>
+                <li>Neoplasia intracraneal intraaxial (ej. gliomas)[cite: 629].</li>
+                <li>Sospecha clínica o confirmación de endocarditis infecciosa[cite: 629].</li>
+                <li>Disección del arco aórtico conocida o bajo sospecha[cite: 629].</li>
+                <li>Coagulopatía grave o trombocitopenia (Plaquetas &lt;100,000/mm³, INR &gt;1.7, TTPA &gt;40s, TP &gt;15s)[cite: 629].</li>
+                <li>Presencia de ARIA o uso de inmunoterapia antiamiloide[cite: 629].</li>
+            </ul>
+        </details>
+
+        <details class="bloque-contraindicacion relativa">
+            <summary><strong>Precaución Moderada / Evaluación Individualizada (Relativas)</strong></summary>
+            <ul>
+                <li>Exposición reciente a anticoagulantes orales directos (AOD) &lt; 48 horas[cite: 627].</li>
+                <li>Ictus isquémico dentro de los últimos 3 meses[cite: 627].</li>
+                <li>Antecedente de hemorragia intracerebral previa (mayor riesgo si es angiopatía amiloide)[cite: 627].</li>
+                <li>Cirugía mayor reciente no neurológica en los últimos 10 días[cite: 627].</li>
+                <li>Sangrado digestivo o genitourinario reciente en los últimos 21 días[cite: 627].</li>
+                <li>Traumatismo mayor reciente no relacionado con el SNC (14 días a 3 meses)[cite: 627].</li>
+                <li>Infarto agudo de miocardio con elevación del ST (IAMCEST) en los últimos 3 meses[cite: 627].</li>
+                <li>Embarazo y puerperio (sopesar riesgo de hemorragia uterina frente a gravedad del ictus)[cite: 627].</li>
+                <li>Punción dural o punción arterial en sitio no compresible en los últimos 7 días[cite: 627].</li>
+                <li>Malformación vascular intracraneal o disección arterial intracraneal no rota[cite: 627].</li>
+                <li>Neoplasia maligna sistémica activa[cite: 627].</li>
+                <li>Discapacidad previa significativa o fragilidad basal[cite: 627].</li>
+            </ul>
+        </details>
+
+        <details class="bloque-contraindicacion bajo-riesgo">
+            <summary><strong>Bajo Riesgo Relativo / Beneficios generalmente mayores que los riesgos</strong></summary>
+            <ul>
+                <li>Disecciones arteriales cervicales extracraneales conocidas o bajo sospecha[cite: 624].</li>
+                <li>Neoplasias intracraneales extraaxiales (ej. meningiomas)[cite: 624].</li>
+                <li>Ictus procedimental durante o inmediatamente después de una angiografía[cite: 624].</li>
+                <li>Aneurisma intracraneal no roto[cite: 624].</li>
+                <li>Antecedentes remotos y estables de sangrado digestivo o genitourinario[cite: 624].</li>
+                <li>Antecedentes remotos de infarto de miocardio[cite: 624].</li>
+                <li>Consumo conocido de drogas recreativas[cite: 624].</li>
+                <li>Enfermedad de Moya-Moya[cite: 624].</li>
+                <li>Incertidumbre diagnóstica o sospecha de imitador de ictus (Stroke Mimic)[cite: 624].</li>
+            </ul>
+        </details>
+    </div>
+
+    <div class="card complicaciones-panel">
+        <h3>Manejo de Complicaciones Emergentes [cite: 361]</h3>
+        <div class="tabs-complicacion">
+            <button class="btn-tab activo" onclick="cambiarComplicacion('hic')">Hemorragia Intracraneal Sintomática (HICs)</button>
+            <button class="btn-tab" onclick="cambiarComplicacion('angioedema')">Angioedema Orolingual</button>
+        </div>
+
+        <div id="protocolo-hic" class="contenido-complicacion">
+            <p class="alerta-intratab"><strong>Acción Inmediata:</strong> Si el paciente presenta cefalea intensa, hipertensión aguda, náuseas/vómitos o empeoramiento neurológico, suspenda la infusión y solicite TAC craneal urgente[cite: 468].</p>
+            <table class="tabla-protocolo">
+                <tr><th>Medida</th><th>Intervención y Dosis [cite: 418]</th></tr>
+                <tr><td><strong>Muestras analíticas</strong></td><td>Hemograma, TP/INR, TTPA, Fibrinógeno, pruebas cruzadas[cite: 418].</td></tr>
+                <tr><td><strong>Crioprecipitado</strong></td><td>Administrar 10 U en 10–30 min (Objetivo: mantener fibrinógeno &ge; 150 mg/dL)[cite: 418].</td></tr>
+                <tr><td><strong>Antifibrinolíticos</strong></td><td>Ácido Tranexámico 1000 mg IV (en 10 min) Ó Ácido Épsilon-aminocaproico 4–5 g (en 1 h)[cite: 418].</td></tr>
+                <tr><td><strong>Soporte General</strong></td><td>Control estricto de PA, PIC, PPC, temperatura y glucemia. Consulta urgente con Neurocirugía y Hematología[cite: 418].</td></tr>
+            </table>
+        </div>
+
+        <div id="protocolo-angioedema" class="contenido-complicacion oculto">
+            <p class="alerta-intratab"><strong>Riesgo vital:</strong> Puede causar una obstrucción parcial o total de la vía aérea[cite: 361].</p>
+            <table class="tabla-protocolo">
+                <tr><th>Eje</th><th>Estrategia Terapéutica [cite: 420]</th></tr>
+                <tr><td><strong>Vía Aérea</strong></td><td>Intubación si hay afectación laringe/orofaringe. Se prefiere el uso de fibroscopio en paciente despierto[cite: 420].</td></tr>
+                <tr><td><strong>Suspensión</strong></td><td>Detener de inmediato el trombolítico y los inhibidores de la ECA (IECA) si los tomaba[cite: 420].</td></tr>
+                <tr><td><strong>Tratamiento Inicial</strong></td><td>Metilprednisolona 125 mg IV + Difenhidramina 50 mg IV + Ranitidina 50 mg IV[cite: 420].</td></tr>
+                <tr><td><strong>Progresión</strong></td><td>Adrenalina 0.3 mL SC (al 0.1%). Considerar Icatibant 30 mg SC (máximo 3 dosis en 24h)[cite: 420].</td></tr>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .modulo-ictus { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: #1a1a1a; max-width: 800px; margin: 0 auto; padding: 10px; }
+    .card { background: #ffffff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .alerta-presion { border-left: 5px solid #e67e22; background: #fffcf9; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+    .pa-box { background: #f8f9fa; padding: 12px; border-radius: 6px; border: 1px solid #e9ecef; }
+    .pa-box .valor { display: block; font-size: 1.4rem; font-weight: bold; color: #d35400; margin: 5px 0; }
+    .pa-box .label { font-size: 0.9rem; font-weight: 600; color: #495057; }
+    .pa-box .desc { font-size: 0.8rem; color: #6c757d; margin: 0; }
+    .nota-seguridad { margin-top: 12px; padding: 10px; border-radius: 6px; font-size: 0.85rem; line-height: 1.3; }
+    .contraindicacion-3 { background: #fadbd8; color: #78281f; border: 1px solid #f5b7b1; }
+    .input-grupo { margin-bottom: 20px; display: flex; flex-direction: column; }
+    .input-grupo label { font-weight: bold; margin-bottom: 6px; font-size: 1rem; }
+    .input-grupo input { padding: 12px; border: 2px solid #ced4da; border-radius: 6px; font-size: 1.2rem; max-width: 200px; }
+    .ayuda-input { font-size: 0.8rem; color: #6c757d; margin-top: 4px; }
+    .tabs-dosificacion { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    @media (max-width: 600px) { .tabs-dosificacion { grid-template-columns: 1fr; } }
+    .tab-farmaco { border: 2px solid #dee2e6; border-radius: 6px; padding: 15px; background: #f8f9fa; }
+    .tab-farmaco.elegido { border-color: #2e86de; background: #f4f9ff; }
+    .badge-recomendado { background: #2e86de; color: white; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; vertical-align: middle; margin-left: 5px; }
+    .resultado-dosis { background: #ffffff; border: 1px solid #ced4da; border-radius: 6px; padding: 12px; margin: 10px 0; font-size: 1.1rem; }
+    .resultado-dosis div { margin-bottom: 6px; }
+    .resultado-dosis div:last-child { margin-bottom: 0; }
+    .total-resaltado { color: #2e86de; border-top: 1px solid #eee; padding-top: 6px; margin-top: 6px; font-size: 1.2rem; }
+    .nota-farmaco { font-size: 0.75rem; color: #6c757d; margin: 0; }
+    .selector-ventana { display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
+    .opcion-ventana { flex: 1; min-width: 140px; }
+    .opcion-ventana input { display: none; }
+    .opcion-ventana span { display: block; padding: 10px; border: 1px solid #ced4da; border-radius: 6px; text-align: center; cursor: pointer; font-size: 0.85rem; background: #f8f9fa; font-weight: 500; }
+    .opcion-ventana input:checked + span { background: #2e86de; color: white; border-color: #2e86de; }
+    .panel-info { background: #f1f2f6; border-radius: 6px; padding: 15px; font-size: 0.9rem; line-height: 1.4; border-left: 4px solid #747d8c; }
+    .bloque-contraindicacion { margin-bottom: 10px; border: 1px solid #ced4da; border-radius: 6px; background: #ffffff; }
+    .bloque-contraindicacion summary { padding: 12px; cursor: pointer; outline: none; font-size: 0.95rem; }
+    .bloque-contraindicacion ul { margin: 0; padding: 0 15px 12px 30px; font-size: 0.85rem; line-height: 1.5; }
+    .bloque-contraindicacion li { margin-bottom: 6px; }
+    .absoluta { border-left: 4px solid #c0392b; }
+    .relativa { border-left: 4px solid #f1c40f; }
+    .bajo-riesgo { border-left: 4px solid #2ecc71; }
+    .tabs-complicacion { display: flex; gap: 5px; margin-bottom: 15px; border-bottom: 1px solid #dee2e6; padding-bottom: 5px; }
+    .btn-tab { background: none; border: none; padding: 10px 15px; cursor: pointer; font-size: 0.9rem; font-weight: 500; color: #495057; }
+    .btn-tab.activo { color: #c0392b; border-bottom: 2px solid #c0392b; font-weight: bold; }
+    .alerta-intratab { background: #fdf2f2; border: 1px solid #f8d7da; color: #721c24; padding: 10px; border-radius: 6px; font-size: 0.85rem; margin-top: 0; }
+    .tabla-protocolo { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 10px; }
+    .tabla-protocolo th, .tabla-protocolo td { padding: 10px; border: 1px solid #dee2e6; text-align: left; }
+    .tabla-protocolo th { background: #f8f9fa; font-weight: bold; width: 25%; }
+    .oculto { display: none !important; }
+</style>
+
+<script>
+    // Inicialización al cargar el script
+    document.addEventListener("DOMContentLoaded", function() {
+        actualizarCriteriosImagen();
+    });
+
+    function calcularDosisIctus() {
+        const pesoInput = document.getElementById('peso-paciente').value;
+        const peso = parseFloat(pesoInput);
+
+        if (isNaN(peso) || peso <= 0) {
+            limpiarCamposDosis();
+            return;
+        }
+
+        // 1. CÁLCULO TENECTEPLASE (TNK) - Basado estrictamente en la tabla de rangos de la guía 2026 
+        let tnkDosis = 0;
+        let tnkVol = 0;
+
+        if (peso < 60) {
+            tnkDosis = 15; tnkVol = 3.0;
+        } else if (peso >= 60 && peso < 70) {
+            tnkDosis = 17.5; tnkVol = 3.5;
+        } else if (peso >= 70 && peso < 80) {
+            tnkDosis = 20; tnkVol = 4.0;
+        } else if (peso >= 80 && peso < 90) {
+            tnkDosis = 22.5; tnkVol = 4.5;
+        } else { // peso >= 90
+            tnkDosis = 25; tnkVol = 5.0; // Máximo de 25 mg establecido 
+        }
+
+        document.getElementById('tnk-dosis').innerText = tnkDosis.toFixed(1);
+        document.getElementById('tnk-volumen').innerText = tnkVol.toFixed(1);
+
+        // 2. CÁLCULO ALTEPLASE (rt-PA) - 0.9 mg/kg, Máximo 90 mg total [cite: 464, 507]
+        let rtpaTotal = peso * 0.9;
+        if (rtpaTotal > 90) rtpaTotal = 90;
+
+        const rtpaBolo = rtpaTotal * 0.10; // 10% en bolo [cite: 464, 507]
+        const rtpaInfusion = rtpaTotal * 0.90; // 90% infusión [cite: 464, 507]
+
+        document.getElementById('rtpa-bolo').innerText = rtpaBolo.toFixed(2);
+        document.getElementById('rtpa-infusion').innerText = rtpaInfusion.toFixed(2);
+        document.getElementById('rtpa-total').innerText = rtpaTotal.toFixed(2);
+    }
+
+    function limpiarCamposDosis() {
+        document.getElementById('tnk-dosis').innerText = "-";
+        document.getElementById('tnk-volumen').innerText = "-";
+        document.getElementById('rtpa-bolo').innerText = "-";
+        document.getElementById('rtpa-infusion').innerText = "-";
+        document.getElementById('rtpa-total').innerText = "-";
+    }
+
+    function actualizarCriteriosImagen() {
+        const ventanaElegida = document.querySelector('input[name="ventana"]:checked').value;
+        const panel = document.getElementById('criterio-imagen-resultado');
+        
+        let textoHtml = "";
+
+        switch(ventanaElegida) {
+            case "estandar":
+                textoHtml = `<strong>Criterio Estándar (&lt;4.5 horas):</strong> TAC craneal simple o RM basal para valorar carga isquémica (ASPECTS) y descartar de forma absoluta la presencia de hemorragia intracraneal[cite: 264]. No demore el bolo para realizar estudios avanzados si el diagnóstico clínico es muy probable[cite: 360, 400].`;
+                break;
+            case "despertar":
+                textoHtml = `<strong>Ictus del despertar / Hora de inicio desconocida (&lt;4.5h desde detección):</strong> La selección requiere una de las siguientes opciones:<br>
+                • <strong>Desajuste (Mismatch) RM DWI-FLAIR:</strong> Señal isquémica evidente en la secuencia DWI y ausencia de cambios marcados de señal en la secuencia FLAIR (Indica ventana de tiempo biológica temprana)[cite: 471, 264]. Lesión en DWI debe ser menor de un tercio del territorio de la ACM[cite: 471].`;
+                break;
+            case "extendida":
+                textoHtml = `<strong>Ventana Extendida (4.5 a 24 horas):</strong> Tratamiento razonable supeditado a criterios estrictos de imagen avanzada mediante software de postprocesamiento automatizado[cite: 264, 471]:<br>
+                • <strong>Ventana 4.5 a 9 horas:</strong> Penumbra isquémica salvable identificada por CTP o RM DWI-PWI (Relación de desajuste volumen penumbra/núcleo &gt; 1.2 o 1.8, volumen del núcleo &lt; 70 mL)[cite: 324, 471, 300].<br>
+                • <strong>Ventana 4.5 a 24 horas (Con OGV):</strong> Indicado en pacientes con oclusión de gran vaso y tejido penumbral salvable que *no* pueden ser sometidos a tratamiento endovascular (TVE) o lo recibirán con un retraso crítico[cite: 471, 496].`;
+                break;
+        }
+        panel.innerHTML = textoHtml;
+    }
+
+    function cambiarComplicacion(tipo) {
+        const btnTabs = document.querySelectorAll('.btn-tab');
+        btnTabs.forEach(btn => btn.classList.remove('activo'));
+        
+        if (tipo === 'hic') {
+            document.getElementById('protocolo-hic').classList.remove('oculto');
+            document.getElementById('protocolo-angioedema').classList.add('oculto');
+            event.target.classList.add('activo');
+        } else {
+            document.getElementById('protocolo-angioedema').classList.remove('oculto');
+            document.getElementById('protocolo-hic').classList.add('oculto');
+            event.target.classList.add('activo');
+        }
+    }
+</script>
