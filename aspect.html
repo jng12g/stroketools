@@ -1,315 +1,450 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora ASPECTS</title>
-    <style>
-        :root {
-            --bg-color: #f4f7f6;
-            --card-bg: #ffffff;
-            --primary: #2c3e50;
-            --accent: #3498db;
-            --danger: #e74c3c;
-            --text-main: #333333;
-            --text-muted: #7f8c8d;
-            --border-radius: 8px;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-        }
+<title>Calculadora ASPECTS en Ictus — NEUROTOOLS</title>
+<meta name="description" content="Calculadora clínica interactiva de la escala ASPECTS (Alberta Stroke Program Early CT Score) para evaluar la extensión de la isquemia en el ictus de la arteria cerebral media.">
 
-        .calculator-container {
-            background-color: var(--card-bg);
-            max-width: 700px;
-            width: 100%;
-            padding: 30px;
-            border-radius: var(--border-radius);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
+<link rel="canonical" href="https://neurotools.es/vascular/aspects.html">
 
-        h2 {
-            margin-top: 0;
-            color: var(--primary);
-            text-align: center;
-            border-bottom: 2px solid var(--primary);
-            padding-bottom: 10px;
-        }
+<meta property="og:title" content="Calculadora ASPECTS | Neurotools">
+<meta property="og:description" content="Evalúa la extensión de los signos isquémicos tempranos en la TC craneal con esta calculadora interactiva de la escala ASPECTS.">
+<meta property="og:type" content="website">
 
-        .reference-image {
-            max-width: 100%;
-            height: auto;
-            display: block;
-            margin: 20px auto;
-            border-radius: var(--border-radius);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-        .score-display {
-            text-align: center;
-            margin: 20px 0;
-            padding: 20px;
-            background-color: var(--bg-color);
-            border-radius: var(--border-radius);
-        }
+<style>
+  :root {
+    --paper: #f4efe4;
+    --paper-deep: #ebe4d3;
+    --paper-card: #faf6ec;
+    --ink: #1a1614;
+    --ink-soft: #4a3f38;
+    --ink-muted: #8a7d72;
+    --accent: #7a1f2b;
+    --accent-warm: #a64a3a;
+    --hairline: #cfc4ad;
+    --hairline-soft: #e8e1ce;
+    --green: #4a6741;
+    --amber: #b8862f;
+    --red: #962934;
+    --ease: cubic-bezier(.2,.7,.3,1);
+  }
 
-        .score-number {
-            font-size: 4rem;
-            font-weight: bold;
-            color: var(--primary);
-            line-height: 1;
-        }
+  * { box-sizing: border-box; }
 
-        .score-number.low-score {
-            color: var(--danger);
-        }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Instrument Sans', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
 
-        .controls {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 30px;
-        }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.3;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.1 0 0 0 0 0.08 0 0 0 0 0.07 0 0 0 0.45 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
 
-        .toggle-container {
-            display: flex;
-            background-color: #e0e6ed;
-            border-radius: 20px;
-            overflow: hidden;
-        }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+    position: relative;
+    z-index: 2;
+  }
 
-        .toggle-btn {
-            padding: 10px 20px;
-            border: none;
-            background: none;
-            cursor: pointer;
-            font-weight: bold;
-            color: var(--text-muted);
-            transition: all 0.3s ease;
-        }
+  /* HEADER */
+  header {
+    text-align: center;
+    margin-bottom: 24px;
+    padding: 28px 24px;
+    background: linear-gradient(135deg, #1a1614, #4a3f38);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(26, 22, 20, 0.15);
+    color: #fff;
+  }
+  .breadcrumb {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--paper-deep);
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .breadcrumb a { color: var(--paper); text-decoration: none; font-weight: 600; }
+  .breadcrumb .sep { color: var(--ink-muted); }
+  
+  header h1 {
+    font-family: 'Fraunces', Georgia, serif;
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    margin: 0 0 8px;
+  }
+  header .desc { font-size: 14px; opacity: 0.8; font-family: 'Instrument Sans', sans-serif; }
+  header .ref { font-size: 11px; opacity: 0.5; margin-top: 8px; font-family: 'JetBrains Mono', monospace; }
 
-        .toggle-btn.active {
-            background-color: var(--primary);
-            color: white;
-        }
+  /* SCORE BAR */
+  #score-bar {
+    border: 2px solid var(--hairline-soft);
+    border-radius: 16px;
+    padding: 16px 24px;
+    margin-bottom: 24px;
+    background: var(--paper);
+    transition: all 0.3s var(--ease);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .lbl { font-size: 11px; color: var(--ink-muted); letter-spacing: 2px; font-family: 'JetBrains Mono', monospace; margin-bottom: 4px; }
+  #total-num { font-size: 48px; font-weight: 900; line-height: 1; font-family: 'JetBrains Mono', monospace; color: var(--ink); }
+  #total-num span { font-size: 20px; opacity: 0.5; }
+  
+  #adj-label {
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-weight: 700;
+    font-size: 14px;
+    display: inline-block;
+    background: var(--green);
+    color: white;
+  }
 
-        .anatomy-section {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
+  /* CARDS */
+  .card {
+    background: var(--paper-card);
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 4px 24px rgba(0,0,0,0.02);
+    margin-bottom: 20px;
+    overflow: hidden;
+    border: 1px solid var(--hairline-soft);
+  }
+  .card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, rgba(74,63,56,0.05), rgba(74,63,56,0.02));
+    border-bottom: 1px solid var(--hairline-soft);
+  }
+  .card-head .left { display: flex; align-items: center; gap: 10px; }
+  .card-head h3 { margin: 0; font-size: 15px; font-weight: 800; color: var(--ink); }
+  .card-body { padding: 16px 20px; }
 
-        .level-group {
-            width: 100%;
-            margin-bottom: 15px;
-        }
+  /* IMAGE */
+  .reference-image {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    border-radius: 8px;
+    mix-blend-mode: multiply;
+  }
 
-        h4 {
-            color: var(--accent);
-            margin-bottom: 10px;
-            font-size: 1.1rem;
-            border-left: 4px solid var(--accent);
-            padding-left: 8px;
-        }
+  /* BUTTONS GRID */
+  .checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+  }
+  .btn-region {
+    font-family: 'Instrument Sans', sans-serif;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1.5px solid var(--hairline-soft);
+    background: var(--paper-card);
+    color: var(--ink-soft);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .btn-region .pts {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    opacity: 0.6;
+    font-weight: 400;
+  }
+  .btn-region.active {
+    border-color: var(--red);
+    background: rgba(150, 41, 52, 0.08);
+    color: var(--red);
+  }
+  .btn-region.active .pts {
+    color: var(--red);
+    opacity: 1;
+    font-weight: 700;
+  }
 
-        .checkbox-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 10px;
-        }
+  /* INFO BOX */
+  .info-box {
+    background: var(--paper-deep);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
 
-        .region-label {
-            display: flex;
-            align-items: center;
-            padding: 12px;
-            background-color: var(--bg-color);
-            border: 1px solid #dcdde1;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            user-select: none;
-        }
-
-        .region-label:hover {
-            border-color: var(--accent);
-        }
-
-        .region-label input {
-            margin-right: 10px;
-            cursor: pointer;
-            width: 18px;
-            height: 18px;
-            accent-color: var(--danger);
-        }
-
-        /* Orientación visual según hemisferio bajo convención radiológica */
-        .hemisphere-right .checkbox-grid {
-            direction: rtl;
-        }
-        .hemisphere-right .region-label {
-            direction: ltr;
-        }
-
-        .region-label.checked {
-            background-color: #fadbd8;
-            border-color: var(--danger);
-            color: var(--danger);
-            font-weight: 500;
-        }
-
-        .info-panel {
-            margin-top: 30px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-left: 4px solid var(--accent);
-            font-size: 0.85rem;
-            color: var(--text-muted);
-        }
-
-        .info-panel ul {
-            padding-left: 20px;
-            margin-top: 5px;
-        }
-
-        .reset-btn {
-            display: block;
-            width: 100%;
-            padding: 12px;
-            background-color: var(--text-muted);
-            color: white;
-            border: none;
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            cursor: pointer;
-            margin-top: 20px;
-            transition: background 0.2s;
-        }
-
-        .reset-btn:hover {
-            background-color: #636e72;
-        }
-    </style>
+  /* CONCLUSION */
+  .concl-card { 
+    background: var(--paper-card); 
+    border-radius: 16px; 
+    box-shadow: 0 1px 4px #0001, 0 4px 24px #0002; 
+    margin-top: 32px; 
+    margin-bottom: 40px; 
+    overflow: hidden; 
+  }
+  .concl-head { 
+    background: linear-gradient(135deg, var(--ink), var(--ink-soft)); 
+    padding: 14px 20px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+  }
+  .concl-head-left { display: flex; align-items: center; gap: 10px; }
+  .concl-head h3 { margin: 0; font-size: 15px; font-weight: 800; color: #fff; }
+  #copy-btn { 
+    padding: 7px 18px; 
+    border-radius: 10px; 
+    background: var(--paper-card); 
+    color: var(--ink); 
+    border: none; 
+    font-weight: 700; 
+    font-size: 13px; 
+    cursor: pointer;
+    transition: all .2s; 
+  }
+  #copy-btn.copied { background: var(--green); color: #fff; }
+  #concl-pre {
+    margin: 0; padding: 16px 20px;
+    font-size: 13px; line-height: 1.8;
+    color: var(--ink); font-family: 'JetBrains Mono', monospace;
+    background: var(--paper);
+    white-space: pre-wrap; word-break: break-word;
+    border-top: 1px solid var(--hairline-soft);
+  }
+</style>
 </head>
 <body>
+<div class="container">
 
-<div class="calculator-container" id="main-container">
-    <h2>ASPECTS</h2>
-    
-    <div class="controls">
-        <div class="toggle-container">
-            <button class="toggle-btn active" id="btn-right" onclick="setHemisphere('right')">Hemisferio Derecho</button>
-            <button class="toggle-btn" id="btn-left" onclick="setHemisphere('left')">Hemisferio Izquierdo</button>
-        </div>
+  <header>
+    <div class="breadcrumb">
+      <a href="/index.html">← VOLVER AL ÍNDICE</a>
+      <span class="sep">/</span>
+      <span>Ictus isquémico agudo</span>
     </div>
+    <h1>ASPECTS</h1>
+    <div class="desc">Alberta Stroke Program Early CT Score</div>
+    <div class="ref">Puntuación tomográfica para isquemia en territorio de ACM</div>
+  </header>
 
-    <img src="aspect.png" alt="Territorios ASPECTS" class="reference-image" id="ref-img">
-
-    <div class="score-display">
-        <div>Puntuación Total</div>
-        <div class="score-number" id="score-val">10</div>
-        <div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 5px;" id="hemisphere-text">
-            TC Visión Radiológica: Lado afectado a la izquierda (Hemisferio Derecho)
-        </div>
+  <div id="score-bar">
+    <div>
+      <div class="lbl">PUNTUACIÓN TOTAL</div>
+      <div id="total-num">10<span>/10</span></div>
     </div>
-
-    <div class="anatomy-section">
-        <div class="level-group">
-            <h4>Nivel de Ganglios Basales</h4>
-            <div class="checkbox-grid">
-                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> C (Caudado)</label>
-                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> L (Lenticular)</label>
-                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> IC (Cápsula Interna)</label>
-                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> I (Insular)</label>
-                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> M1 (Anterior)</label>
-                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> M2 (Lateral)</label>
-                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> M3 (Posterior)</label>
-            </div>
-        </div>
-
-        <div class="level-group">
-            <h4>Nivel de Ventrículos / Corona Radiata</h4>
-            <div class="checkbox-grid">
-                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> M4 (Sup. M1)</label>
-                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> M5 (Sup. M2)</label>
-                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> M6 (Sup. M3)</label>
-            </div>
-        </div>
+    <div style="text-align:right">
+      <div id="adj-label">Territorio íntegro</div>
     </div>
+  </div>
 
-    <button class="reset-btn" onclick="resetCalculator()">Reiniciar Calculadora</button>
-
-    <div class="info-panel">
-        <strong>Puntos clave:</strong>
-        <ul>
-            <li>Se resta 1 punto de un total de 10 por cada región con signos tempranos de isquemia.</li>
-            <li><strong>IC:</strong> Se incluye cualquier porción de la cápsula interna.</li>
-            <li><strong>M1 a M6:</strong> Corresponden a territorios corticales de la ACM, no a segmentos vasculares anatómicos.</li>
-        </ul>
+  <div class="card">
+    <div class="card-head">
+      <div class="left"><span style="font-size:20px">🗺️</span><h3>Territorios radiológicos</h3></div>
     </div>
+    <div class="card-body" style="background: var(--paper);">
+      <div style="font-size: 12px; color: var(--ink-muted); text-align: center; margin-bottom: 12px; font-family: 'JetBrains Mono', monospace;">
+        Convención radiológica (el lado izquierdo corresponde al hemisferio derecho)
+      </div>
+      <img src="aspect.png" alt="Territorios ASPECTS" class="reference-image">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div class="left"><span style="font-size:20px">🧠</span><h3>Signos isquémicos tempranos</h3></div>
+      <button onclick="resetCalculator()" style="background:none; border:none; color:var(--ink-muted); font-size:12px; font-family:'JetBrains Mono', monospace; cursor:pointer; text-decoration:underline;">[Reiniciar]</button>
+    </div>
+    <div class="card-body">
+      <div class="info-box">
+        <strong>Instrucciones:</strong> Seleccione los territorios que presentan signos tempranos de isquemia (hipodensidad o borramiento de surcos). Se restará 1 punto por cada territorio seleccionado del total de 10.
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <div class="lbl" style="color: var(--accent); font-weight: 600; margin-bottom: 10px;">NIVEL GANGLIOS BASALES</div>
+        <div class="checkbox-grid">
+          <button class="btn-region" data-region="C" onclick="toggleRegion('C')">Caudado (C) <span class="pts">0</span></button>
+          <button class="btn-region" data-region="L" onclick="toggleRegion('L')">Lenticular (L) <span class="pts">0</span></button>
+          <button class="btn-region" data-region="IC" onclick="toggleRegion('IC')">Cápsula Int. (IC) <span class="pts">0</span></button>
+          <button class="btn-region" data-region="I" onclick="toggleRegion('I')">Ínsula (I) <span class="pts">0</span></button>
+          <button class="btn-region" data-region="M1" onclick="toggleRegion('M1')">Córtex M1 <span class="pts">0</span></button>
+          <button class="btn-region" data-region="M2" onclick="toggleRegion('M2')">Córtex M2 <span class="pts">0</span></button>
+          <button class="btn-region" data-region="M3" onclick="toggleRegion('M3')">Córtex M3 <span class="pts">0</span></button>
+        </div>
+      </div>
+
+      <div>
+        <div class="lbl" style="color: var(--accent); font-weight: 600; margin-bottom: 10px;">NIVEL VENTRÍCULOS / CORONA RADIATA</div>
+        <div class="checkbox-grid">
+          <button class="btn-region" data-region="M4" onclick="toggleRegion('M4')">Córtex M4 <span class="pts">0</span></button>
+          <button class="btn-region" data-region="M5" onclick="toggleRegion('M5')">Córtex M5 <span class="pts">0</span></button>
+          <button class="btn-region" data-region="M6" onclick="toggleRegion('M6')">Córtex M6 <span class="pts">0</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="concl-card">
+    <div class="concl-head">
+      <div class="concl-head-left">
+        <span style="font-size:18px">📋</span>
+        <h3>Resumen clínico</h3>
+      </div>
+      <button id="copy-btn" onclick="copyConclusion()">⎘ Copiar</button>
+    </div>
+    <pre id="concl-pre"></pre>
+  </div>
+
+  <div class="card" style="margin-bottom: 40px; background: transparent; box-shadow: none; border-color: var(--hairline);">
+    <div class="card-head" style="background: transparent; border-bottom: none;">
+      <div class="left"><span style="font-size:20px">📚</span><h3 style="color: var(--ink-soft);">Sobre la escala ASPECTS</h3></div>
+    </div>
+    <div class="card-body" style="font-size: 13px; line-height: 1.6; color: var(--ink-soft); padding-top: 0;">
+      <p>La puntuación <strong>ASPECTS (Alberta Stroke Program Early CT Score)</strong> es una herramienta cuantitativa de evaluación topográfica de 10 puntos, utilizada para valorar los cambios isquémicos tempranos en la tomografía computarizada (TC) craneal sin contraste en pacientes con ictus isquémico agudo de la circulación anterior (territorio de la arteria cerebral media).</p>
+      <p><strong>Criterios de puntuación:</strong> A partir de una puntuación basal de 10 (TC normal), se resta 1 punto por cada una de las 10 regiones predefinidas que muestren evidencia de isquemia temprana (hipodensidad del parénquima o pérdida de diferenciación sustancia gris/blanca). Una puntuación de 0 indica isquemia difusa en todo el territorio de la ACM.</p>
+      <p><strong>Correlación clínica:</strong> Generalmente, puntuaciones ASPECTS $\ge$ 6 indican una extensión moderada de la isquemia, asociándose a mejores resultados clínicos tras terapias de reperfusión (fibrinolisis IV o trombectomía mecánica). Puntuaciones ASPECTS $\le$ 5 sugieren un infarto extenso ("core" grande).</p>
+    </div>
+  </div>
+
 </div>
 
+<script src="/js/back-button.js"></script>
+
 <script>
-    function calculateScore() {
-        const checkboxes = document.querySelectorAll('.region-label input[type="checkbox"]');
-        let deductions = 0;
+  // Estado de las regiones
+  const state = {
+    C: false, L: false, IC: false, I: false,
+    M1: false, M2: false, M3: false,
+    M4: false, M5: false, M6: false
+  };
 
-        checkboxes.forEach(cb => {
-            const label = cb.parentElement;
-            if (cb.checked) {
-                deductions++;
-                label.classList.add('checked');
-            } else {
-                label.classList.remove('checked');
-            }
-        });
+  const regionNames = {
+    C: "Caudado", L: "Lenticular", IC: "Cápsula Interna", I: "Ínsula",
+    M1: "M1 (Anterior)", M2: "M2 (Lateral)", M3: "M3 (Posterior)",
+    M4: "M4 (Sup. M1)", M5: "M5 (Sup. M2)", M6: "M6 (Sup. M3)"
+  };
 
-        const currentScore = 10 - deductions;
-        const scoreDisplay = document.getElementById('score-val');
-        scoreDisplay.textContent = currentScore;
+  function toggleRegion(region) {
+    state[region] = !state[region];
+    const btn = document.querySelector(`button[data-region="${region}"]`);
+    
+    if (state[region]) {
+      btn.classList.add('active');
+      btn.querySelector('.pts').textContent = '-1';
+    } else {
+      btn.classList.remove('active');
+      btn.querySelector('.pts').textContent = '0';
+    }
+    
+    updateScore();
+  }
 
-        if (currentScore <= 7) {
-            scoreDisplay.classList.add('low-score');
-        } else {
-            scoreDisplay.classList.remove('low-score');
-        }
+  function updateScore() {
+    // Calcular puntos perdidos
+    const deductions = Object.values(state).filter(val => val === true).length;
+    const score = 10 - deductions;
+    
+    // Actualizar UI Número
+    const numEl = document.getElementById('total-num');
+    const barEl = document.getElementById('score-bar');
+    const labelEl = document.getElementById('adj-label');
+
+    numEl.innerHTML = `${score}<span>/10</span>`;
+
+    // Cambiar color según puntuación
+    if (score === 10) {
+      barEl.style.borderColor = "var(--hairline-soft)";
+      numEl.style.color = "var(--ink)";
+      labelEl.textContent = "Sin signos isquémicos";
+      labelEl.style.background = "var(--green)";
+    } else if (score >= 6) {
+      barEl.style.borderColor = "var(--amber)";
+      numEl.style.color = "var(--amber)";
+      labelEl.textContent = "Infarto moderado (ASPECTS ≥ 6)";
+      labelEl.style.background = "var(--amber)";
+    } else {
+      barEl.style.borderColor = "var(--red)";
+      numEl.style.color = "var(--red)";
+      labelEl.textContent = "Infarto extenso (ASPECTS ≤ 5)";
+      labelEl.style.background = "var(--red)";
     }
 
-    function setHemisphere(side) {
-        const container = document.getElementById('main-container');
-        const btnRight = document.getElementById('btn-right');
-        const btnLeft = document.getElementById('btn-left');
-        const hemiText = document.getElementById('hemisphere-text');
+    updateConclusion(score);
+  }
 
-        if (side === 'right') {
-            container.classList.remove('hemisphere-left');
-            container.classList.add('hemisphere-right');
-            btnRight.classList.add('active');
-            btnLeft.classList.remove('active');
-            hemiText.textContent = 'TC Visión Radiológica: Lado afectado a la izquierda (Hemisferio Derecho)';
-        } else {
-            container.classList.remove('hemisphere-right');
-            container.classList.add('hemisphere-left');
-            btnLeft.classList.add('active');
-            btnRight.classList.remove('active');
-            hemiText.textContent = 'TC Visión Radiológica: Lado afectado a la derecha (Hemisferio Izquierdo)';
-        }
+  function updateConclusion(score) {
+    const affected = Object.keys(state).filter(k => state[k]);
+    const affectedNames = affected.map(k => `${k} (${regionNames[k]})`);
+    
+    let text = `Escala ASPECTS: ${score}/10\n`;
+    
+    if (score === 10) {
+      text += `· Sin evidencia de signos isquémicos tempranos en territorio ACM.`;
+    } else {
+      text += `· Territorios afectados (-${10-score} pts): ${affected.join(', ')}\n`;
+      text += `  Detalle: ${affectedNames.join(' | ')}`;
     }
+    
+    document.getElementById('concl-pre').textContent = text;
+  }
 
-    function resetCalculator() {
-        const checkboxes = document.querySelectorAll('.region-label input[type="checkbox"]');
-        checkboxes.forEach(cb => cb.checked = false);
-        calculateScore();
-    }
+  function resetCalculator() {
+    Object.keys(state).forEach(k => {
+      state[k] = false;
+      const btn = document.querySelector(`button[data-region="${k}"]`);
+      btn.classList.remove('active');
+      btn.querySelector('.pts').textContent = '0';
+    });
+    updateScore();
+  }
 
-    // Inicialización
-    setHemisphere('right');
-    calculateScore();
+  function copyConclusion() {
+    const text = document.getElementById('concl-pre').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = '✓ Copiado';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = '⎘ Copiar'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  // Init
+  updateScore();
 </script>
 
 </body>
