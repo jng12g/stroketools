@@ -233,7 +233,6 @@
   }
   .legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-soft); }
   .legend i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
-  .footnote { margin-top: 24px; font-size: 13px; color: var(--ink-muted); text-align: center; line-height: 1.6; }
 </style>
 </head>
 <body>
@@ -259,14 +258,13 @@
     <span><i style="background:var(--c3-bg);border:1px solid var(--c3-bd)"></i>3 · Sin beneficio / Perjudicial</span>
   </div>
 
-  <p class="footnote">COR = clase de recomendación · LOE = nivel de evidencia · AIS = ictus isquémico agudo · OGV = oclusión de gran vaso · TVE = tratamiento endovascular · NBO = hiperoxia normobárica · OHB = oxígeno hiperbárico · HICs = hemorragia intracraneal sintomática.</p>
 </div>
 
 <!-- Script del botón de volver atrás -->
 <script src="/js/back-button.js"></script>
 
 <script>
-const CITE='Soporte general temprano del AIS';
+const CITE='Soporte general temprano del ictus isquémico agudo';
 const ICON_CITE='<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>';
 const CHEV='<svg class="exchev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>';
 const corClass=c=>({"1":"cor-1","2a":"cor-2a","2b":"cor-2b","3nb":"cor-3","3h":"cor-3h"})[c];
@@ -275,50 +273,50 @@ const corWord=c=>({"1":"Recomendado","2a":"Razonable","2b":"Puede considerarse",
 
 const R={
   a1:{cor:"1",loe:"C-LD",s:"Soporte de vía aérea si ↓ consciencia o disfunción bulbar",t:"En pacientes con ictus agudo y disminución del nivel de conciencia o disfunción bulbar, se recomienda el soporte de la vía aérea y la asistencia ventilatoria según sea necesario para mantener la permeabilidad de la vía aérea, su protección y una adecuada ventilación y oxigenación."},
-  a2:{cor:"1",loe:"C-LD",s:"O₂ suplementario si hipoxia: objetivo SpO₂ > 94%",t:"En pacientes con AIS e hipoxia, se debe proporcionar oxígeno suplementario para mantener la saturación de oxígeno (SpO₂) > 94%."},
-  a3:{cor:"2b",loe:"B-R",s:"NBO antes del TVE en OGV anterior (NIHSS 10–20, < 6 h)",t:"En pacientes con AIS dentro de las 6 horas desde el inicio, con puntuación NIHSS de 10 a 20, ASPECTS por TC ≥ 6, y oclusión de gran vaso (OGV) de la circulación anterior (M1 o terminación carotídea) con tratamiento endovascular (TVE) planificado (con o sin fibrinólisis IV), el uso de hiperoxia normobárica (NBO) antes del TVE puede ser razonable para mejorar los resultados funcionales a los 90 días."},
-  a4:{cor:"2b",loe:"B-NR",s:"OHB en el embolismo aéreo arterial",t:"En pacientes con AIS debido a un embolismo aéreo arterial, el oxígeno hiperbárico (OHB) puede ser razonable para mejorar el resultado clínico."},
-  a5:{cor:"3nb",loe:"B-R",s:"O₂ rutinario sin hipoxia (no apto a TVE): sin beneficio",t:"En pacientes con AIS sin hipoxia que no son aptos para TVE, no se recomienda la administración de oxígeno suplementario para mejorar los resultados funcionales."},
-  a6:{cor:"3nb",loe:"B-R",s:"OHB sin embolismo aéreo: sin beneficio",t:"En pacientes con AIS no asociado a un embolismo aéreo, no se recomienda el uso de OHB para mejorar los resultados funcionales."},
-  h1:{cor:"3nb",loe:"B-R",s:"Cabeza a 0° frente a 30° de rutina: sin beneficio",t:"En pacientes con AIS a nivel global, no hay beneficio en el posicionamiento rutinario de la cabeza a 0 grados en comparación con 30 grados durante 24 horas para mejorar el resultado funcional."},
-  h2:{cor:"3nb",loe:"B-R",s:"Trendelenburg (–20°) sin reperfusión: sin beneficio",t:"En pacientes con AIS por causa probable de aterosclerosis de gran arteria para quienes no se dispone de ninguna intervención de reperfusión, no hay beneficio en el posicionamiento rutinario en Trendelenburg (–20 grados) en comparación con el posicionamiento de la cabeza a 0 o 30 grados para mejorar el resultado funcional."},
-  b1:{cor:"1",loe:"C-LD",s:"Corregir la hipotensión y la hipovolemia",t:"En pacientes con AIS, la hipotensión y la hipovolemia deben corregirse para mantener los niveles de perfusión sistémica necesarios para respaldar la función orgánica."},
-  b2:{cor:"1",loe:"C-EO",s:"Tratar la HTA precoz si una comorbilidad lo exige",t:"En pacientes con AIS, el tratamiento temprano de la hipertensión está indicado cuando lo requieran enfermedades concomitantes (por ejemplo, un evento coronario agudo concomitante, insuficiencia cardíaca aguda, disección aórtica, HICs postrombolisis o preeclampsia/eclampsia) para reducir el riesgo de complicaciones."},
-  b3:{cor:"2b",loe:"C-EO",s:"PA ≥ 220/120 sin reperfusión: tratar es incierto",t:"En pacientes con PA ≥ 220/120 mmHg que no recibieron fibrinólisis IV ni TVE y no tienen enfermedades concomitantes que requieran un tratamiento antihipertensivo urgente, el beneficio de iniciar o reiniciar el tratamiento de la hipertensión dentro de las primeras 48 a 72 horas es incierto."},
-  b4:{cor:"3nb",loe:"A",s:"PA < 220/120 sin reperfusión: tratar no es efectivo",t:"En pacientes con PA < 220/120 mmHg que no recibieron fibrinólisis IV ni TVE y no tienen una enfermedad concomitante que requiera un tratamiento antihipertensivo urgente, iniciar o reiniciar el tratamiento de la hipertensión dentro de las primeras 48 a 72 horas después de un AIS no es efectivo para prevenir la muerte o la dependencia."},
-  b5:{cor:"1",loe:"B-NR",s:"Antes de la fibrinólisis IV: reducir a < 185/110",t:"Los pacientes con AIS que tienen la PA elevada y que, por lo demás, son aptos para el tratamiento con fibrinólisis IV deben recibir una reducción de su PAS a < 185 mmHg y de la presión arterial diastólica (PAD) a < 110 mmHg antes de que se inicie la terapia con fibrinólisis IV para reducir las complicaciones hemorrágicas."},
-  b6:{cor:"2a",loe:"B-NR",s:"Antes del TVE (sin fibrinólisis): mantener ≤ 185/110",t:"En pacientes para quienes se planifica un TVE y que no han recibido terapia de fibrinólisis IV, es razonable mantener la PA ≤ 185/110 mmHg antes del procedimiento para evitar complicaciones y mejorar los resultados del paciente."},
+  a2:{cor:"1",loe:"C-LD",s:"O₂ suplementario si hipoxia: objetivo SpO₂ > 94%",t:"En pacientes con ictus isquémico agudo e hipoxia, se debe proporcionar oxígeno suplementario para mantener la saturación de oxígeno (SpO₂) > 94%."},
+  a3:{cor:"2b",loe:"B-R",s:"Hiperoxia normobárica antes del tratamiento endovascular en oclusión de gran vaso anterior",t:"En pacientes con ictus isquémico agudo dentro de las 6 horas desde el inicio, con puntuación NIHSS de 10 a 20, ASPECTS por TC ≥ 6, y oclusión de gran vaso de la circulación anterior (M1 o terminación carotídea) con tratamiento endovascular planificado (con o sin fibrinólisis IV), el uso de hiperoxia normobárica antes del tratamiento endovascular puede ser razonable para mejorar los resultados funcionales a los 90 días."},
+  a4:{cor:"2b",loe:"B-NR",s:"Oxígeno hiperbárico en el embolismo aéreo arterial",t:"En pacientes con ictus isquémico agudo debido a un embolismo aéreo arterial, el oxígeno hiperbárico puede ser razonable para mejorar el resultado clínico."},
+  a5:{cor:"3nb",loe:"B-R",s:"O₂ rutinario sin hipoxia (no apto a tratamiento endovascular): sin beneficio",t:"En pacientes con ictus isquémico agudo sin hipoxia que no son aptos para tratamiento endovascular, no se recomienda la administración de oxígeno suplementario para mejorar los resultados funcionales."},
+  a6:{cor:"3nb",loe:"B-R",s:"Oxígeno hiperbárico sin embolismo aéreo: sin beneficio",t:"En pacientes con ictus isquémico agudo no asociado a un embolismo aéreo, no se recomienda el uso de oxígeno hiperbárico para mejorar los resultados funcionales."},
+  h1:{cor:"3nb",loe:"B-R",s:"Cabeza a 0° frente a 30° de rutina: sin beneficio",t:"En pacientes con ictus isquémico agudo a nivel global, no hay beneficio en el posicionamiento rutinario de la cabeza a 0 grados en comparación con 30 grados durante 24 horas para mejorar el resultado funcional."},
+  h2:{cor:"3nb",loe:"B-R",s:"Trendelenburg (–20°) sin reperfusión: sin beneficio",t:"En pacientes con ictus isquémico agudo por causa probable de aterosclerosis de gran arteria para quienes no se dispone de ninguna intervención de reperfusión, no hay beneficio en el posicionamiento rutinario en Trendelenburg (–20 grados) en comparación con el posicionamiento de la cabeza a 0 o 30 grados para mejorar el resultado funcional."},
+  b1:{cor:"1",loe:"C-LD",s:"Corregir la hipotensión y la hipovolemia",t:"En pacientes con ictus isquémico agudo, la hipotensión y la hipovolemia deben corregirse para mantener los niveles de perfusión sistémica necesarios para respaldar la función orgánica."},
+  b2:{cor:"1",loe:"C-EO",s:"Tratar la HTA precoz si una comorbilidad lo exige",t:"En pacientes con ictus isquémico agudo, el tratamiento temprano de la hipertensión está indicado cuando lo requieran enfermedades concomitantes (por ejemplo, un evento coronario agudo concomitante, insuficiencia cardíaca aguda, disección aórtica, hemorragia intracraneal sintomática postrombolisis o preeclampsia/eclampsia) para reducir el riesgo de complicaciones."},
+  b3:{cor:"2b",loe:"C-EO",s:"PA ≥ 220/120 sin reperfusión: tratar es incierto",t:"En pacientes con PA ≥ 220/120 mmHg que no recibieron fibrinólisis IV ni tratamiento endovascular y no tienen enfermedades concomitantes que requieran un tratamiento antihipertensivo urgente, el beneficio de iniciar o reiniciar el tratamiento de la hipertensión dentro de las primeras 48 a 72 horas es incierto."},
+  b4:{cor:"3nb",loe:"A",s:"PA < 220/120 sin reperfusión: tratar no es efectivo",t:"En pacientes con PA < 220/120 mmHg que no recibieron fibrinólisis IV ni tratamiento endovascular y no tienen una enfermedad concomitante que requiera un tratamiento antihipertensivo urgente, iniciar o reiniciar el tratamiento de la hipertensión dentro de las primeras 48 a 72 horas después de un ictus isquémico agudo no es efectivo para prevenir la muerte o la dependencia."},
+  b5:{cor:"1",loe:"B-NR",s:"Antes de la fibrinólisis IV: reducir a < 185/110",t:"Los pacientes con ictus isquémico agudo que tienen la PA elevada y que, por lo demás, son aptos para el tratamiento con fibrinólisis IV deben recibir una reducción de su presión arterial sistólica (PAS) a < 185 mmHg y de la presión arterial diastólica (PAD) a < 110 mmHg antes de que se inicie la terapia con fibrinólisis IV para reducir las complicaciones hemorrágicas."},
+  b6:{cor:"2a",loe:"B-NR",s:"Antes del tratamiento endovascular (sin fibrinólisis): mantener ≤ 185/110",t:"En pacientes para quienes se planifica un tratamiento endovascular y que no han recibido terapia de fibrinólisis IV, es razonable mantener la PA ≤ 185/110 mmHg antes del procedimiento para evitar complicaciones y mejorar los resultados del paciente."},
   b7:{cor:"1",loe:"B-R",s:"Tras la fibrinólisis IV: < 180/105 al menos 24 h",t:"La PA debe mantenerse a < 180/105 mmHg durante al menos las primeras 24 horas después del tratamiento con fibrinólisis IV."},
-  b8:{cor:"3nb",loe:"B-R",s:"Post-fibrinólisis: PAS < 140 intensiva sin beneficio",t:"En pacientes con AIS de gravedad leve a moderada que han sido tratados con fibrinólisis IV, no se recomienda la reducción intensiva de la PAS (objetivo de < 140 mmHg en comparación con < 180 mmHg) porque no se asocia con una mejora en el resultado funcional."},
-  b9:{cor:"2a",loe:"B-NR",s:"Durante y 24 h post-TVE: mantener ≤ 180/105",t:"En pacientes que se someten a TVE, es razonable mantener la PA a un nivel ≤ 180/105 mmHg durante y durante las 24 horas posteriores al procedimiento."},
-  b10:{cor:"3h",loe:"A",s:"Tras recanalización: PAS < 140 en 72 h es perjudicial",t:"En pacientes con AIS con OGV de la circulación anterior que han sido recanalizados con éxito mediante terapia endovascular (mTICI 2b, 2c o 3) y sin otra indicación para un objetivo de control de la presión arterial, la reducción intensiva de la PAS a un objetivo de < 140 mmHg durante las primeras 72 horas es perjudicial y no se recomienda."},
-  t1:{cor:"1",loe:"B-R",s:"Hipertermia: buscar la normotermia",t:"En pacientes con AIS que tienen hipertermia, se recomienda buscar la normotermia, incluyendo el uso de protocolos iniciados por enfermería para el manejo de la fiebre, para mejorar los resultados funcionales y reducir la mortalidad."},
-  t2:{cor:"1",loe:"C-EO",s:"Identificar y tratar la fuente (infección)",t:"En pacientes con AIS e hipertermia, se deben identificar y tratar las fuentes de la hipertermia, como las infecciones, para evitar complicaciones."},
-  t3:{cor:"3nb",loe:"B-R",s:"Hipotermia inducida en normotermia: sin beneficio",t:"En pacientes con AIS y normotermia, no se recomienda el tratamiento con hipotermia inducida o la prevención profiláctica de la fiebre con el propósito de mejorar los resultados."},
-  g1:{cor:"1",loe:"C-LD",s:"Tratar la hipoglucemia < 60 mg/dL",t:"En pacientes con AIS, la hipoglucemia (glucosa en sangre < 60 mg/dL) debe ser tratada para evitar complicaciones."},
-  g2:{cor:"2a",loe:"C-LD",s:"Hiperglucemia persistente: objetivo 140–180 mg/dL",t:"En pacientes con AIS, es razonable tratar la hiperglucemia persistente para alcanzar niveles de glucosa en sangre en un rango de 140 a 180 mg/dL con una monitorización estrecha para prevenir peores resultados funcionales."},
-  g3:{cor:"3nb",loe:"A",s:"Control intensivo 80–130 (insulina IV): sin beneficio",t:"En pacientes hospitalizados con AIS e hiperglucemia, no se recomienda el tratamiento con insulina IV para alcanzar niveles de glucosa en sangre en el rango de 80 a 130 mg/dL con el fin de mejorar los resultados funcionales a los 3 meses."}
+  b8:{cor:"3nb",loe:"B-R",s:"Post-fibrinólisis: PAS < 140 intensiva sin beneficio",t:"En pacientes con ictus isquémico agudo de gravedad leve a moderada que han sido tratados con fibrinólisis IV, no se recomienda la reducción intensiva de la PAS (objetivo de < 140 mmHg en comparación con < 180 mmHg) porque no se asocia con una mejora en el resultado funcional."},
+  b9:{cor:"2a",loe:"B-NR",s:"Durante y 24 h post-tratamiento endovascular: mantener ≤ 180/105",t:"En pacientes que se someten a tratamiento endovascular, es razonable mantener la PA a un nivel ≤ 180/105 mmHg durante y durante las 24 horas posteriores al procedimiento."},
+  b10:{cor:"3h",loe:"A",s:"Tras recanalización: PAS < 140 en 72 h es perjudicial",t:"En pacientes con ictus isquémico agudo con oclusión de gran vaso de la circulación anterior que han sido recanalizados con éxito mediante tratamiento endovascular (mTICI 2b, 2c o 3) y sin otra indicación para un objetivo de control de la presión arterial, la reducción intensiva de la PAS a un objetivo de < 140 mmHg durante las primeras 72 horas es perjudicial y no se recomienda."},
+  t1:{cor:"1",loe:"B-R",s:"Hipertermia: buscar la normotermia",t:"En pacientes con ictus isquémico agudo que tienen hipertermia, se recomienda buscar la normotermia, incluyendo el uso de protocolos iniciados por enfermería para el manejo de la fiebre, para mejorar los resultados funcionales y reducir la mortalidad."},
+  t2:{cor:"1",loe:"C-EO",s:"Identificar y tratar la fuente (infección)",t:"En pacientes con ictus isquémico agudo e hipertermia, se deben identificar y tratar las fuentes de la hipertermia, como las infecciones, para evitar complicaciones."},
+  t3:{cor:"3nb",loe:"B-R",s:"Hipotermia inducida en normotermia: sin beneficio",t:"En pacientes con ictus isquémico agudo y normotermia, no se recomienda el tratamiento con hipotermia inducida o la prevención profiláctica de la fiebre con el propósito de mejorar los resultados."},
+  g1:{cor:"1",loe:"C-LD",s:"Tratar la hipoglucemia < 60 mg/dL",t:"En pacientes con ictus isquémico agudo, la hipoglucemia (glucosa en sangre < 60 mg/dL) debe ser tratada para evitar complicaciones."},
+  g2:{cor:"2a",loe:"C-LD",s:"Hiperglucemia persistente: objetivo 140–180 mg/dL",t:"En pacientes con ictus isquémico agudo, es razonable tratar la hiperglucemia persistente para alcanzar niveles de glucosa en sangre en un rango de 140 a 180 mg/dL con una monitorización estrecha para prevenir peores resultados funcionales."},
+  g3:{cor:"3nb",loe:"A",s:"Control intensivo 80–130 (insulina IV): sin beneficio",t:"En pacientes hospitalizados con ictus isquémico agudo e hiperglucemia, no se recomienda el tratamiento con insulina IV para alcanzar niveles de glucosa en sangre en el rango de 80 a 130 mg/dL con el fin de mejorar los resultados funcionales a los 3 meses."}
 };
 
 const SUP={
   a1:"El soporte de la vía aérea debe determinarse por tres factores: la capacidad de mantener o proteger la vía aérea, la capacidad de ventilación y oxigenación adecuadas, y el curso clínico previsto con la probabilidad de deterioro. La hipoxia afecta hasta al 63% de los pacientes en algún momento tras el ingreso y se asocia a mayor riesgo de muerte.",
   a2:"Un estudio de cohorte retrospectivo mostró que una buena oxigenación en las primeras horas se asoció con menor mortalidad; una SpO₂ < 93% conllevó mayor mortalidad frente al 93–95%. Un análisis post-hoc de HeadPoST encontró un nadir óptimo en 96–97%.",
-  a3:"Los resultados negativos de estudios previos de NBO pueden deberse a la falta de recanalización. OPENS-2 (282 pacientes, controlado con sham) mostró mejor mRS a 90 días con NBO (mediana 2 vs 3; ORc ajustada 1.65). Evidencia prometedora, pendiente de replicación multicéntrica.",
-  a4:"Un metanálisis de estudios no aleatorizados en embolismo aéreo cerebral mostró que un menor tiempo hasta el OHB se asocia con mayor probabilidad de resultado favorable.",
+  a3:"Los resultados negativos de estudios previos de hiperoxia normobárica pueden deberse a la falta de recanalización. OPENS-2 (282 pacientes, controlado con sham) mostró mejor mRS a 90 días con hiperoxia normobárica (mediana 2 vs 3; ORc ajustada 1.65). Evidencia prometedora, pendiente de replicación multicéntrica.",
+  a4:"Un metanálisis de estudios no aleatorizados en embolismo aéreo cerebral mostró que un menor tiempo hasta el oxígeno hiperbárico se asocia con mayor probabilidad de resultado favorable.",
   a5:"El ECA más grande (n=8003) no halló mejores resultados con oxígeno suplementario en pacientes no hipóxicos. Existe creciente preocupación por el daño de la hiperoxia (producción de radicales libres).",
-  a6:"La evidencia actual no respalda el uso rutinario de OHB en el ictus agudo no asociado a embolismo aéreo.",
+  a6:"La evidencia actual no respalda el uso rutinario de oxígeno hiperbárico en el ictus agudo no asociado a embolismo aéreo.",
   h1:"HeadPoST (gran ensayo cruzado y abierto) no halló diferencias en la mRS a 90 días entre la posición de cabeza plana (0°) y elevada (≥30°) mantenidas 24 h.",
   h2:"HOPES-2 comparó la posición de Trendelenburg (–20°) con el posicionamiento estándar y no encontró diferencias en el resultado funcional.",
   b1:"No existen datos concluyentes para guiar el volumen ni la duración de la fluidoterapia, pero la corrección de hipovolemia/hipotensión es una medida de soporte básico.",
-  b2:"Los pacientes con AIS pueden presentar comorbilidades graves que requieren reducción urgente de la PA, pero se recomienda un manejo individualizado con una reducción inicial prudente (15%).",
+  b2:"Los pacientes con ictus isquémico agudo pueden presentar comorbilidades graves que requieren reducción urgente de la PA, pero se recomienda un manejo individualizado con una reducción inicial prudente (15%).",
   b3:"La hipertensión grave (> 220/120) fue excluida de ensayos previos. Se sugiere la reducción individualizada, equilibrando perfusión cerebral y sistémica.",
-  b4:"Un metanálisis encontró que reducir la PA < 220/120 en las primeras 48–72 h tras el AIS (sin indicación concurrente) no mejora los resultados funcionales.",
+  b4:"Un metanálisis encontró que reducir la PA < 220/120 en las primeras 48–72 h tras el ictus isquémico agudo (sin indicación concurrente) no mejora los resultados funcionales.",
   b5:"Los ensayos de alteplasa exigieron PAS < 185 y PAD < 110. El riesgo de hemorragia tras alteplasa es mayor con PA más elevadas.",
-  b6:"Los ECA de TVE excluyeron una PA > 185/110 mmHg. Es razonable usar ese nivel como guía preprocedimiento.",
+  b6:"Los ECA de tratamiento endovascular excluyeron una PA > 185/110 mmHg. Es razonable usar ese nivel como guía preprocedimiento.",
   b7:"Mantener PAS < 180/105 mmHg tras trombolisis previene complicaciones hemorrágicas.",
-  b8:"En AIS leve-moderado tras alteplasa, reducir a < 140 mmHg disminuye el riesgo de HIC pero no aporta beneficio funcional frente a < 180 mmHg.",
+  b8:"En ictus isquémico agudo leve-moderado tras alteplasa, reducir a < 140 mmHg disminuye el riesgo de hemorragia intracraneal sintomática pero no aporta beneficio funcional frente a < 180 mmHg.",
   b9:"Los objetivos óptimos de PA tras la trombectomía siguen estudiándose por el equilibrio entre el riesgo de hiperperfusión y la hipoperfusión.",
-  b10:"Múltiples ECA y metanálisis demostraron que reducir la PAS a < 140 mmHg en las primeras 24 h tras TVE exitoso conduce a mayor mortalidad y menor independencia funcional.",
+  b10:"Múltiples ECA y metanálisis demostraron que reducir la PAS a < 140 mmHg en las primeras 24 h tras tratamiento endovascular exitoso conduce a mayor mortalidad y menor independencia funcional.",
   t1:"La temperatura elevada se asocia con peores resultados. Los protocolos para tratar la fiebre mejoran los resultados a corto y largo plazo.",
   t2:"La fuente de hipertermia (habitualmente infecciosa) debe identificarse y tratarse con rapidez.",
   t3:"Los estudios de hipotermia en pacientes normotérmicos no han mostrado beneficio y pueden aumentar eventos adversos.",
@@ -329,23 +327,23 @@ const SUP={
 
 const PHASES=[
   {id:"none",label:"Sin terapia de reperfusión",target:null,
-   note:"Manejo conservador. Con PA < 220/120 mmHg, tratar en las primeras 48–72 h no es efectivo (COR 3). Con PA ≥ 220/120 mmHg, el beneficio es incierto (COR 2b). Tratar solo si existe comorbilidad que lo exija (COR 1).",
+   note:"Manejo conservador. Con PA < 220/120 mmHg, tratar en las primeras 48–72 h no es efectivo (Clase de recomendación 3). Con PA ≥ 220/120 mmHg, el beneficio es incierto (Clase de recomendación 2b). Tratar solo si existe comorbilidad que lo exija (Clase de recomendación 1).",
    ids:["b1","b2","b3","b4"]},
   {id:"prefib",label:"Antes de fibrinólisis IV",target:"< 185 / 110",cap:"mmHg al iniciar",
    note:"Reducir la presión arterial antes de administrar el fibrinolítico para disminuir el riesgo de complicaciones hemorrágicas.",ids:["b5"]},
-  {id:"preevt",label:"Antes de TVE (sin fibrinólisis)",target:"≤ 185 / 110",cap:"mmHg preprocedimiento",
+  {id:"preevt",label:"Antes de tratamiento endovascular (sin fibrinólisis)",target:"≤ 185 / 110",cap:"mmHg preprocedimiento",
    note:"Límite guiado por los criterios de inclusión de los ensayos pivotales de trombectomía mecánica.",ids:["b6"]},
   {id:"postfib",label:"Después de fibrinólisis IV",target:"< 180 / 105",cap:"mmHg durante ≥ 24 h",
-   note:"Mantener este límite. La reducción intensiva (PAS < 140) no ha demostrado beneficio funcional (COR 3).",ids:["b7","b8"]},
-  {id:"postevt",label:"Durante y 24 h post-TVE",target:"≤ 180 / 105",cap:"mmHg",
+   note:"Mantener este límite. La reducción intensiva (PAS < 140) no ha demostrado beneficio funcional (Clase de recomendación 3).",ids:["b7","b8"]},
+  {id:"postevt",label:"Durante y 24 h post-tratamiento endovascular",target:"≤ 180 / 105",cap:"mmHg",
    note:"Objetivo estándar de control tensional durante y después del procedimiento intervencionista.",ids:["b9"]},
   {id:"recan",label:"Tras recanalización exitosa",target:"PAS < 140",cap:"PERJUDICIAL en 72 h",harm:true,
-   note:"Si se logró mTICI 2b–3 sin estenosis severa persistente, reducir la PAS < 140 mmHg empeora la morbimortalidad.",ids:["b10"]}
+   note:"Si se logró recanalización exitosa sin estenosis severa persistente, reducir la PAS < 140 mmHg empeora la morbimortalidad.",ids:["b10"]}
 ];
 
 const TABS=[
   {id:"aire",label:"Vía aérea y O₂",icon:'<path d="M12 3c-1.5 2.5-5 4-5 8a5 5 0 0 0 10 0c0-4-3.5-5.5-5-8Z"/><path d="M9 14a3 3 0 0 0 6 0"/>',
-   intro:"Mantener la permeabilidad y oxigenación es prioritario. El objetivo es <strong>SpO₂ > 94%</strong> solo si hay hipoxia; el oxígeno suplementario rutinario en normoxia no aporta beneficio. La NBO antes del TVE es una vía prometedora en subgrupos concretos (estudio OPENS-2).",
+   intro:"Mantener la permeabilidad y oxigenación es prioritario. El objetivo es <strong>SpO₂ > 94%</strong> solo si hay hipoxia; el oxígeno suplementario rutinario en normoxia no aporta beneficio. La hiperoxia normobárica antes del tratamiento endovascular es una vía prometedora en subgrupos concretos (estudio OPENS-2).",
    ids:["a1","a2","a3","a4","a5","a6"]},
   {id:"cabeza",label:"Posicionamiento",icon:'<circle cx="12" cy="8" r="3"/><path d="M5 21c0-3 3-5 7-5s7 2 7 5"/><path d="M3 11h2M19 11h2"/>',
    intro:"Tres ECA (HeadPoST, HOPES-2) no han demostrado beneficio del posicionamiento rutinario de la cabeza a 0° frente a 30°, ni en Trendelenburg (–20°) sobre el resultado funcional global.",
@@ -367,7 +365,7 @@ function recRow(id){
       <span class="badge ${corClass(r.cor)}"><span class="b-cor">${corBadge(r.cor)}</span><span class="b-loe">${r.loe}</span></span>
       <span class="extitle">${r.s}</span>${CHEV}
     </summary><div class="exbody">
-      <span class="verdict ${corClass(r.cor)}">${corWord(r.cor)} · COR ${corBadge(r.cor)} · LOE ${r.loe}</span>
+      <span class="verdict ${corClass(r.cor)}">${corWord(r.cor)} · Clase de recomendación ${corBadge(r.cor)} · Nivel de evidencia ${r.loe}</span>
       <div class="quote-tag">${ICON_CITE} Texto literal de la guía</div>
       <p class="quote"><span style="display:block">${r.t}</span><cite>${CITE}</cite></p>
       ${SUP[id]?`<div class="suphead"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Evidencia Científica</div><p class="suptext">${SUP[id]}</p>`:""}
