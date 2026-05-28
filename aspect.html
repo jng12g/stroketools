@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora ASPECTS</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --danger: #e74c3c;
+            --text-main: #333333;
+            --text-muted: #7f8c8d;
+            --border-radius: 8px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .calculator-container {
+            background-color: var(--card-bg);
+            max-width: 700px;
+            width: 100%;
+            padding: 30px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: var(--primary);
+            text-align: center;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
+        }
+
+        .reference-image {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 20px auto;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .score-display {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            border-radius: var(--border-radius);
+        }
+
+        .score-number {
+            font-size: 4rem;
+            font-weight: bold;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .score-number.low-score {
+            color: var(--danger);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .toggle-container {
+            display: flex;
+            background-color: #e0e6ed;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .toggle-btn {
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-weight: bold;
+            color: var(--text-muted);
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .anatomy-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .level-group {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        h4 {
+            color: var(--accent);
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            border-left: 4px solid var(--accent);
+            padding-left: 8px;
+        }
+
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+        }
+
+        .region-label {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background-color: var(--bg-color);
+            border: 1px solid #dcdde1;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .region-label:hover {
+            border-color: var(--accent);
+        }
+
+        .region-label input {
+            margin-right: 10px;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--danger);
+        }
+
+        /* Orientación visual según hemisferio bajo convención radiológica */
+        .hemisphere-right .checkbox-grid {
+            direction: rtl;
+        }
+        .hemisphere-right .region-label {
+            direction: ltr;
+        }
+
+        .region-label.checked {
+            background-color: #fadbd8;
+            border-color: var(--danger);
+            color: var(--danger);
+            font-weight: 500;
+        }
+
+        .info-panel {
+            margin-top: 30px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 4px solid var(--accent);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .info-panel ul {
+            padding-left: 20px;
+            margin-top: 5px;
+        }
+
+        .reset-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: var(--text-muted);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+
+        .reset-btn:hover {
+            background-color: #636e72;
+        }
+    </style>
+</head>
+<body>
+
+<div class="calculator-container" id="main-container">
+    <h2>ASPECTS</h2>
+    
+    <div class="controls">
+        <div class="toggle-container">
+            <button class="toggle-btn active" id="btn-right" onclick="setHemisphere('right')">Hemisferio Derecho</button>
+            <button class="toggle-btn" id="btn-left" onclick="setHemisphere('left')">Hemisferio Izquierdo</button>
+        </div>
+    </div>
+
+    <img src="aspect.png" alt="Territorios ASPECTS" class="reference-image" id="ref-img">
+
+    <div class="score-display">
+        <div>Puntuación Total</div>
+        <div class="score-number" id="score-val">10</div>
+        <div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 5px;" id="hemisphere-text">
+            TC Visión Radiológica: Lado afectado a la izquierda (Hemisferio Derecho)
+        </div>
+    </div>
+
+    <div class="anatomy-section">
+        <div class="level-group">
+            <h4>Nivel de Ganglios Basales</h4>
+            <div class="checkbox-grid">
+                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> C (Caudado)</label>
+                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> L (Lenticular)</label>
+                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> IC (Cápsula Interna)</label>
+                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> I (Insular)</label>
+                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> M1 (Anterior)</label>
+                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> M2 (Lateral)</label>
+                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> M3 (Posterior)</label>
+            </div>
+        </div>
+
+        <div class="level-group">
+            <h4>Nivel de Ventrículos / Corona Radiata</h4>
+            <div class="checkbox-grid">
+                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> M4 (Sup. M1)</label>
+                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> M5 (Sup. M2)</label>
+                <label class="region-label"><input type="checkbox" onchange="calculateScore()"> M6 (Sup. M3)</label>
+            </div>
+        </div>
+    </div>
+
+    <button class="reset-btn" onclick="resetCalculator()">Reiniciar Calculadora</button>
+
+    <div class="info-panel">
+        <strong>Puntos clave:</strong>
+        <ul>
+            <li>Se resta 1 punto de un total de 10 por cada región con signos tempranos de isquemia.</li>
+            <li><strong>IC:</strong> Se incluye cualquier porción de la cápsula interna.</li>
+            <li><strong>M1 a M6:</strong> Corresponden a territorios corticales de la ACM, no a segmentos vasculares anatómicos.</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    function calculateScore() {
+        const checkboxes = document.querySelectorAll('.region-label input[type="checkbox"]');
+        let deductions = 0;
+
+        checkboxes.forEach(cb => {
+            const label = cb.parentElement;
+            if (cb.checked) {
+                deductions++;
+                label.classList.add('checked');
+            } else {
+                label.classList.remove('checked');
+            }
+        });
+
+        const currentScore = 10 - deductions;
+        const scoreDisplay = document.getElementById('score-val');
+        scoreDisplay.textContent = currentScore;
+
+        if (currentScore <= 7) {
+            scoreDisplay.classList.add('low-score');
+        } else {
+            scoreDisplay.classList.remove('low-score');
+        }
+    }
+
+    function setHemisphere(side) {
+        const container = document.getElementById('main-container');
+        const btnRight = document.getElementById('btn-right');
+        const btnLeft = document.getElementById('btn-left');
+        const hemiText = document.getElementById('hemisphere-text');
+
+        if (side === 'right') {
+            container.classList.remove('hemisphere-left');
+            container.classList.add('hemisphere-right');
+            btnRight.classList.add('active');
+            btnLeft.classList.remove('active');
+            hemiText.textContent = 'TC Visión Radiológica: Lado afectado a la izquierda (Hemisferio Derecho)';
+        } else {
+            container.classList.remove('hemisphere-right');
+            container.classList.add('hemisphere-left');
+            btnLeft.classList.add('active');
+            btnRight.classList.remove('active');
+            hemiText.textContent = 'TC Visión Radiológica: Lado afectado a la derecha (Hemisferio Izquierdo)';
+        }
+    }
+
+    function resetCalculator() {
+        const checkboxes = document.querySelectorAll('.region-label input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = false);
+        calculateScore();
+    }
+
+    // Inicialización
+    setHemisphere('right');
+    calculateScore();
+</script>
+
+</body>
+</html>
