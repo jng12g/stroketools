@@ -755,7 +755,7 @@ function detectIncompatibilities(recs, trace) {
     recs.push({ type: 'danger', tag: 'Contraindicación Absoluta', title: 'Suspender Metformina Inmediatamente', body: `El paciente presenta un Filtrado Glomerular (FGe) de <strong>${state.fge} mL/min</strong>. A estos niveles, la Metformina está formalmente contraindicada por el riesgo severo de acidosis láctica. Se sugiere sustituir la base de tratamiento por fármacos seguros en ERC avanzada.` });
     trace.push('FGe <30: Retirada de metformina obligatoria.');
     incomp = true;
-  } else if (state.drugs.metformina && state.fge < 45) {
+  } else if (state.drugs.metformina && state.fge < 45 && !state.cirrosis) {
     recs.push({ type: 'warn', tag: 'Ajuste de dosis', title: 'Se recomienda reducir la dosis de Metformina', body: `Con un FGe de ${state.fge} mL/min (en el rango 30-45), la Metformina exige precaución extrema. Se debe reducir obligatoriamente su dosis al 50% de la máxima tolerada previamente.` });
   }
 
@@ -859,7 +859,9 @@ function generateRecs(cond, target) {
   // =====================================================================
   const isPaliativo = state.fragilidad && state.fragGrade === 'muyGrave';
   const farmacoPrioritario = getFarmacoPrioritario(cond.id);
-  let textoTransicion = ` Una vez resuelta la glucotoxicidad y retirados los síntomas (HbA1c < 8%), se recomienda transicionar y priorizar <strong>${farmacoPrioritario}</strong> para abordar su condicionante clínico principal (${cond.name}).`;
+  let textoTransicion = (cond.id === null)
+    ? ` Una vez resuelta la glucotoxicidad y retirados los síntomas (HbA1c < 8%), se recomienda transicionar al esquema de mantenimiento guiado por HbA1c (priorizando familias de alta eficacia como arGLP-1, arGIP o iSGLT-2).`
+    : ` Una vez resuelta la glucotoxicidad y retirados los síntomas (HbA1c < 8%), se recomienda transicionar y priorizar <strong>${farmacoPrioritario}</strong> para abordar su condicionante clínico principal (${cond.name}).`;
 
   // 1. Descontrol severo catabólico (Sintomático y >= 8.5)
   if (state.sintomatico && state.hba1c >= 8.5 && !isPaliativo) {
@@ -899,7 +901,7 @@ function generateRecs(cond, target) {
   // =====================================================================
   // Evaluación INDEPENDIENTE de Finerenona (ADA 2026)
   // =====================================================================
-  if (state.uacr === 'macro' && state.ras && !state.drugs.finerenona) {
+  if ((state.uacr === 'macro' || state.uacr === 'micro') && state.ras && !state.drugs.finerenona) {
     if (state.fge >= 25 && state.potasio <= 5.0) {
       let tieneSGLT2 = hasClass('isglt2');
       let inicioSimultaneo = (!tieneSGLT2 && state.fge >= 30 && state.fge <= 90) ? 
@@ -910,9 +912,9 @@ function generateRecs(cond, target) {
         body: `Indicado para reducir la progresión de la ERC y los eventos cardiovasculares. El análisis combinado FIDELITY confirmó una reducción del 14% en eventos CV y del 23% en el desenlace renal compuesto.<br>
         <strong>Precaución:</strong> Monitorizar potasio a las 4 semanas. Suspender temporalmente si > 5,5 mmol/L.${inicioSimultaneo}` 
       });
-      trace.push('UACR ≥ 100 e IECA/ARA-II: Se recomienda iniciar Finerenona (paciente no la toma).');
+      trace.push('UACR ≥ 30 (albuminuria) e IECA/ARA-II: Se recomienda iniciar Finerenona (paciente no la toma).');
     } else if (state.potasio > 5.0) {
-      recs.push({ type: 'warn', tag: 'Contraindicación Temporal', title: 'Finerenona diferida por Hiperpotasemia', body: `El paciente tiene indicación para Finerenona (UACR ≥ 100 mg/g y uso de IECA/ARA-II), pero su potasio basal es > 5.0 mmol/L. Debe corregir el potasio antes de iniciar terapia.` });
+      recs.push({ type: 'warn', tag: 'Contraindicación Temporal', title: 'Finerenona diferida por Hiperpotasemia', body: `El paciente tiene indicación para Finerenona (UACR ≥ 30 mg/g y uso de IECA/ARA-II), pero su potasio basal es > 5.0 mmol/L. Debe corregir el potasio antes de iniciar terapia.` });
     }
   } else if (state.drugs.finerenona) {
     trace.push('Finerenona activa en el tratamiento. Se omite recomendación de inicio.');
@@ -938,7 +940,7 @@ function generateRecs(cond, target) {
 
   const inTarget = state.hba1c <= target.upperBound;
   // Excluimos finerenona y Nudge Geriátrico de needsActionGlycemic para no bloquear el mensaje de "Optimizado".
-  const needsActionGlycemic = recs.some(r => (r.type === 'add' || r.type === 'warn' || r.type === 'danger') && r.tag !== 'Individualización Geriátrica' && r.title !== 'Se recomienda iniciar Finerenona' && r.title !== 'Finerenona diferida por Hiperpotasemia');
+  const needsActionGlycemic = recs.some(r => (r.type === 'add' || r.type === 'warn' || r.type === 'danger') && r.tag !== 'Individualización Clínica' && r.title !== 'Se recomienda iniciar Finerenona' && r.title !== 'Finerenona diferida por Hiperpotasemia');
 
   if (!needsActionGlycemic && target.target !== null && inTarget && !hasCriticalConflict) {
     const justificacionOptimizado = renderOptimizedState(cond, state, target);
@@ -989,12 +991,18 @@ function handleFragilidad(recs, trace, target) {
         recs.push({ type: 'danger', tag: 'Riesgo Geriátrico Crítico', title: 'Peligro de Hipoglucemia Severa', body: `El uso de Secretagogos (Sulfonilureas/Glinidas) o Insulina en pacientes frágiles conlleva un altísimo riesgo de hipoglucemias severas, caídas y daño neurológico. <strong>Se debe buscar la mínima dosis viable o proceder a su retirada/sustitución progresiva.</strong>` });
     }
   } else if (state.hba1c > target.upperBound) {
-    // Toma fármacos seguros (Metformina) pero está fuera de objetivo
-    recs.push({ 
-      type: 'add', tag: 'Optimización Geriátrica', title: 'Añadir iDPP-4', 
-      body: coreMessage + `<br><br>Al estar por encima del objetivo (HbA1c > ${target.upperBound}%), se recomienda <strong>añadir un iDPP-4</strong> a su pauta actual. <br><br><em>Nota clínica: No se recomienda sustituir la Metformina por el iDPP-4 para intentar mejorar el control, ya que la menor potencia del iDPP-4 provocaría un efecto rebote y un aumento de la HbA1c. (La sustitución solo procedería si hay intolerancia digestiva o anorexia).</em>` 
-    });
-  } else {
+    // Toma fármacos seguros (Metformina y/o iDPP-4) pero está fuera de objetivo
+    if (!hasClass('idpp4')) {
+      recs.push({ 
+        type: 'add', tag: 'Optimización Geriátrica', title: 'Añadir iDPP-4', 
+        body: coreMessage + `<br><br>Al estar por encima del objetivo (HbA1c > ${target.upperBound}%), se recomienda <strong>añadir un iDPP-4</strong> a su pauta actual. <br><br><em>Nota clínica: No se recomienda sustituir la Metformina por el iDPP-4 para intentar mejorar el control, ya que la menor potencia del iDPP-4 provocaría un efecto rebote y un aumento de la HbA1c. (La sustitución solo procedería si hay intolerancia digestiva o anorexia).</em>` 
+      });
+    } else {
+      recs.push({
+        type: 'info', tag: 'Objetivo Geriátrico', title: 'Aceptar objetivo laxo / revisar dosis',
+        body: coreMessage + `<br><br>El paciente ya recibe un <strong>iDPP-4</strong> (sin fármacos de riesgo geriátrico añadidos). Antes de intensificar, recuerde que en fragilidad el objetivo es laxo: si la HbA1c supera levemente el umbral pero <strong>no hay síntomas de hiperglucemia</strong>, suele preferirse aceptar el control actual y optimizar la dosis de la pauta vigente (iDPP-4 ± Metformina) antes de añadir nuevas familias y exponer al paciente a más riesgo.`
+      });
+    }
     // Toma fármacos seguros (Metformina/iDPP4) y ESTÁ EN OBJETIVO (El caso de tu paciente de 95 años)
     if (state.drugs.metformina) {
         recs.push({ type: 'ok', tag: 'Mantenimiento Geriátrico', title: 'Vigilancia de Metformina', body: `El paciente está bien controlado con su pauta actual. La Metformina es segura si el filtrado glomerular lo permite, pero a esta edad <strong>vigile activamente la aparición de anorexia, pérdida de peso involuntaria o intolerancia digestiva</strong>. Si ocurren, considere retirarla o cambiar a iDPP-4.` });
@@ -1273,7 +1281,8 @@ function update() {
   state.fge = parseFloat(document.getElementById('fge').value) || 0;
   
   state.uacr = document.getElementById('uacr').value;
-  state.potasio = parseFloat(document.getElementById('potasio').value);
+  const potasioRaw = parseFloat(document.getElementById('potasio').value);
+  state.potasio = isNaN(potasioRaw) ? 4.5 : potasioRaw;
   state.ras = document.getElementById('ras').value === 'si';
 
   state.sintomatico = document.getElementById('sintomatico').checked;
@@ -1308,8 +1317,10 @@ function update() {
   document.querySelectorAll('.drug-class').forEach(dc => { const cls = dc.dataset.drugclass; dc.classList.toggle('has-active', hasClass(cls)); });
 
   const fgeHint = document.getElementById('fgeHint');
-  if (state.fge < 30) {
-      fgeHint.innerHTML = '<span style="color:var(--danger); font-weight:600;">Metformina contraindicada. iSGLT-2 no iniciar.</span>';
+  if (state.fge < 20) {
+      fgeHint.innerHTML = '<span style="color:var(--danger); font-weight:600;">Metformina contraindicada. No iniciar iSGLT-2 (mantener si ya lo toma).</span>';
+  } else if (state.fge < 30) {
+      fgeHint.innerHTML = '<span style="color:var(--danger); font-weight:600;">Metformina contraindicada. iSGLT-2 sí puede iniciarse (FGe ≥ 20).</span>';
   } else if (state.fge < 45) {
       fgeHint.innerHTML = '<span style="color:var(--warn); font-weight:600;">Reducir dosis de Metformina al 50%.</span>';
   } else if (state.fge < 60) {
