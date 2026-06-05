@@ -215,6 +215,14 @@
   .rec-card.ok .rec-card-tag { color: var(--evidence); }
 
   .rec-card-tag { font-size: 10px; text-transform: uppercase; letter-spacing: 0.16em; font-weight: 700; margin-bottom: 6px; }
+  .rec-card-tagrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .rec-card-tagrow .rec-card-tag { margin-bottom: 0; }
+  .rec-ref {
+    font-family: "JetBrains Mono", monospace; font-size: 9.5px; font-weight: 600;
+    letter-spacing: 0.02em; color: var(--ink-mute); background: var(--paper);
+    border: 1px solid var(--rule-strong); border-radius: 999px; padding: 1px 8px;
+    white-space: nowrap; flex-shrink: 0;
+  }
   .rec-card-title { font-weight: 600; font-size: 14.5px; color: var(--ink); margin-bottom: 4px; }
   .rec-card-body { font-size: 13px; color: var(--ink-soft); line-height: 1.5; }
   .rec-card-body strong { color: var(--ink); }
@@ -338,6 +346,21 @@
           </select>
         </div>
       </div>
+
+      <div class="row" style="margin-top: 14px;">
+        <div class="field">
+          <label>PA sistólica (mmHg)</label>
+          <input type="number" id="pas" min="70" max="260" value="135">
+        </div>
+        <div class="field">
+          <label>PA diastólica (mmHg)</label>
+          <input type="number" id="pad" min="40" max="160" value="82">
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <div class="field-hint" id="paHint" style="margin-top:8px; font-size:11.5px; line-height:1.3;"></div>
+        </div>
+      </div>
     </div>
 
     <div class="section">
@@ -348,6 +371,19 @@
           <span class="check-body">
             <span class="check-label">Síntomas cardinales</span>
             <span class="check-desc">Poliuria, polidipsia, pérdida de peso, catabolismo</span>
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3 class="section-title">Situación especial</h3>
+      <div class="check-grid">
+        <label class="check evidence" data-check="embarazo">
+          <input type="checkbox" id="embarazo">
+          <span class="check-body">
+            <span class="check-label">Embarazo / gestación o planificación <span class="ev-badge">Seguridad</span></span>
+            <span class="check-desc">Insulina de elección. Contraindica iSGLT-2, arGLP-1/GIP, finerenona e IECA/ARA-II</span>
           </span>
         </label>
       </div>
@@ -419,6 +455,15 @@
         <div class="radio-group" id="fragilidadOpts">
           <label class="radio-pill"><input type="radio" name="fragGrade" value="moderadaGrave" checked> Moderada - Grave</label>
           <label class="radio-pill"><input type="radio" name="fragGrade" value="muyGrave"> Muy grave / vida limitada</label>
+        </div>
+      </div>
+
+      <div class="sub-field" id="icFEGrade">
+        <label>Fracción de eyección (clasificación de la IC)</label>
+        <div class="radio-group" id="icFEOpts">
+          <label class="radio-pill"><input type="radio" name="feIC" value="preservada" checked> Preservada · HFpEF (FE ≥ 50%)</label>
+          <label class="radio-pill"><input type="radio" name="feIC" value="levemente"> Levemente reducida · HFmrEF (41-49%)</label>
+          <label class="radio-pill"><input type="radio" name="feIC" value="reducida"> Reducida · HFrEF (FE ≤ 40%)</label>
         </div>
       </div>
 
@@ -549,6 +594,11 @@
     </div>
 
     <div class="rec-section">
+      <h3 class="rec-title">Riesgo CV · Presión arterial</h3>
+      <div id="paRecs"></div>
+    </div>
+
+    <div class="rec-section">
       <h3 class="rec-title">Trazado del razonamiento</h3>
       <div class="trace">
         <ol id="trace"></ol>
@@ -574,6 +624,9 @@ const state = {
   sintomatico: false, cirrosis: false, ic: false, 
   ictus: false, ecvCoronaria: false, rcvAlto: false,
   erc: false, obesidad: false, hepatica: false, fragilidad: false, fragGrade: 'moderadaGrave', deterioro: false,
+  feIC: 'preservada',
+  embarazo: false,
+  pas: 135, pad: 82,
   drugs: {}
 };
 
@@ -602,6 +655,7 @@ function drugsInClass(cls) {
 }
 
 function getConditioner() {
+  if (state.embarazo) return { id: 'embarazo', name: 'Embarazo / Gestación', meta: 'Insulina de elección. Manejo en alto riesgo obstétrico. Contraindicados iSGLT-2, arGLP-1/GIP, finerenona e IECA/ARA-II.' };
   if (state.cirrosis) return { id: 'cirrosis', name: 'Cirrosis / Insuficiencia Hepática Grave', meta: 'Manejo altamente especializado. Fármacos seguros: Insulina o Linagliptina.' };
   
   // Novedad: La fragilidad se sitúa en la cima clínica. Modifica radicalmente el esquema.
@@ -621,6 +675,9 @@ function getConditioner() {
 }
 
 function getTarget() {
+  if (state.embarazo) {
+    return { target: 6.5, label: 'A1c 6,0 - 6,5 % (gestación)', rationale: 'Objetivo gestacional estricto, guiado por autocontrol glucémico (la A1c es orientativa por el mayor recambio eritrocitario). Manejo en consulta de alto riesgo obstétrico / endocrinología.', upperBound: 6.5 };
+  }
   const sinComplicaciones = !state.ic && !state.ecvCoronaria && !state.ictus && !state.erc && !state.hepatica && !state.rcvAlto && !state.cirrosis;
   
   if (state.fragilidad && state.fragGrade === 'muyGrave') {
@@ -761,7 +818,7 @@ function detectIncompatibilities(recs, trace) {
 
   if (hasClass('isglt2') && state.fge < 20) {
     recs.push({ 
-      type: 'ok', tag: 'Mantenimiento Seguro', title: 'Continuar iSGLT-2 (FGe < 20)', 
+      type: 'ok', tag: 'Mantenimiento Seguro', ref: 'ADA 11.11a', title: 'Continuar iSGLT-2 (FGe < 20)', 
       body: `La ADA 2026 confirma explícitamente la seguridad y el beneficio renal de los iSGLT-2 en la ERC avanzada. Pueden y deben mantenerse de forma segura incluso con FG < 20 mL/min/1.73 m², <strong>siempre y cuando el paciente no requiera terapia de diálisis.</strong>` 
     });
     trace.push('FGe < 20: Se valida el mantenimiento del iSGLT-2 activo según ADA 2026.');
@@ -771,6 +828,16 @@ function detectIncompatibilities(recs, trace) {
     recs.push({ type: 'danger', tag: 'Contraindicación', title: 'Se recomienda suspender la Pioglitazona', body: `La <strong>Pioglitazona</strong> está contraindicada en Insuficiencia Cardíaca. Este fármaco produce retención hidrosalina y aumenta el riesgo de exacerbación. Se sugiere cambiar a un <strong>iSGLT-2</strong>.` });
     trace.push('Pioglitazona + IC: Incompatibilidad crítica.');
     incomp = true;
+  }
+
+  if (hasClass('ins') && (hasClass('su') || hasClass('glinida'))) {
+    recs.push({ type: 'warn', tag: 'Riesgo de Hipoglucemia', title: 'Revisar secretagogo asociado a insulina', body: `El paciente combina <strong>insulina</strong> con un <strong>secretagogo (sulfonilurea o glinida)</strong>. Esta asociación multiplica el riesgo de hipoglucemia con escaso beneficio añadido; al introducir o intensificar la insulina suele recomendarse <strong>reducir o suspender el secretagogo</strong>.` });
+    trace.push('Aviso: insulina + secretagogo (riesgo de hipoglucemia).');
+  }
+
+  if (state.drugs.pioglitazona && hasClass('ins') && !state.ic) {
+    recs.push({ type: 'warn', tag: 'Riesgo de Edema / IC', title: 'Precaución: Pioglitazona + Insulina', body: `La combinación de <strong>pioglitazona</strong> e <strong>insulina</strong> incrementa la retención hidrosalina, el edema y el riesgo de insuficiencia cardíaca. Vigile signos de IC y valore evitar esta asociación, especialmente si hay riesgo cardiovascular.` });
+    trace.push('Aviso: pioglitazona + insulina (edema/IC).');
   }
 
   if (hasClass('idpp4') && (hasClass('arglp') || hasClass('argip'))) {
@@ -794,6 +861,17 @@ function detectIncompatibilities(recs, trace) {
       trace.push('Aviso: Uso prematuro de SU en 1ª o 2ª línea detectado.');
     }
   }
+
+  // Matiz por molécula: ertugliflozina fue neutra en MACE (VERTIS-CV). No cuenta como cardioprotección
+  // arterial probada en un contexto de ASCVD, aunque sí aporta beneficio en IC/renal.
+  if (state.drugs.ertugliflozina && (state.ecvCoronaria || state.rcvAlto || state.ictus)) {
+    recs.push({
+      type: 'info', tag: 'Matiz por molécula', ref: 'VERTIS-CV', title: 'Ertugliflozina: neutra en eventos ateroscleróticos',
+      body: `En contexto de ASCVD, la <strong>ertugliflozina</strong> fue <strong>neutra en MACE</strong> (VERTIS-CV); sí mostró beneficio en hospitalización por IC y renal. Si el objetivo es reducir eventos ateroscleróticos, prefiera un iSGLT-2 con beneficio MACE demostrado (<strong>empagliflozina, canagliflozina</strong>) o un arGLP-1 con evidencia CV.`
+    });
+    trace.push('Matiz: ertugliflozina neutra en MACE (VERTIS-CV) en contexto ASCVD.');
+  }
+
   return incomp;
 }
 
@@ -831,6 +909,12 @@ function generateRecs(cond, target) {
   let conditionHandledIntensification = false;
 
   trace.push(`Evaluación: HbA1c actual de ${state.hba1c.toFixed(1)} % frente a objetivo de ${target.label}`);
+
+  // Embarazo: prioridad absoluta. Se maneja aparte y se corta el motor para no recomendar fármacos contraindicados.
+  if (state.embarazo) {
+    handleEmbarazo(recs, trace);
+    return { recs, trace };
+  }
 
   const hasCriticalConflict = detectIncompatibilities(recs, trace);
 
@@ -904,11 +988,11 @@ function generateRecs(cond, target) {
   if ((state.uacr === 'macro' || state.uacr === 'micro') && state.ras && !state.drugs.finerenona) {
     if (state.fge >= 25 && state.potasio <= 5.0) {
       let tieneSGLT2 = hasClass('isglt2');
-      let inicioSimultaneo = (!tieneSGLT2 && state.fge >= 30 && state.fge <= 90) ? 
-        `<br><br><strong>Nota (Rec 11.9):</strong> Puede considerarse la iniciación simultánea de un iSGLT-2 y finerenona (ensayo CONFIDENCE).` : '';
+      let inicioSimultaneo = (state.uacr === 'macro' && !tieneSGLT2 && state.fge >= 30 && state.fge <= 90) ? 
+        `<br><br><strong>Nota (Rec 11.9 ADA 2026):</strong> Con UACR ≥ 100 mg/g puede considerarse la iniciación simultánea de un iSGLT-2 y finerenona (ensayo CONFIDENCE).` : '';
 
       recs.push({ 
-        type: 'add', tag: 'Nefro/Cardioprotección (Evidencia A)', title: 'Se recomienda iniciar Finerenona', 
+        type: 'add', tag: 'Nefro/Cardioprotección (Evidencia A)', ref: 'ADA Secc.11 · FIDELITY', title: 'Se recomienda iniciar Finerenona', 
         body: `Indicado para reducir la progresión de la ERC y los eventos cardiovasculares. El análisis combinado FIDELITY confirmó una reducción del 14% en eventos CV y del 23% en el desenlace renal compuesto.<br>
         <strong>Precaución:</strong> Monitorizar potasio a las 4 semanas. Suspender temporalmente si > 5,5 mmol/L.${inicioSimultaneo}` 
       });
@@ -940,7 +1024,7 @@ function generateRecs(cond, target) {
 
   const inTarget = state.hba1c <= target.upperBound;
   // Excluimos finerenona y Nudge Geriátrico de needsActionGlycemic para no bloquear el mensaje de "Optimizado".
-  const needsActionGlycemic = recs.some(r => (r.type === 'add' || r.type === 'warn' || r.type === 'danger') && r.tag !== 'Individualización Clínica' && r.title !== 'Se recomienda iniciar Finerenona' && r.title !== 'Finerenona diferida por Hiperpotasemia');
+  const needsActionGlycemic = recs.some(r => (r.type === 'add' || r.type === 'warn' || r.type === 'danger') && r.tag !== 'Individualización Clínica' && !((r.title || '').toLowerCase().includes('finerenona')));
 
   if (!needsActionGlycemic && target.target !== null && inTarget && !hasCriticalConflict) {
     const justificacionOptimizado = renderOptimizedState(cond, state, target);
@@ -964,6 +1048,51 @@ function generateRecs(cond, target) {
 // ---------------------------------------------------------------------
 // HANDLERS DE COMORBILIDADES
 // ---------------------------------------------------------------------
+
+function handleEmbarazo(recs, trace) {
+  recs.push({
+    type: 'info', tag: 'Situación Especial · Embarazo', ref: 'ADA Secc.15', title: 'Insulina como tratamiento de elección',
+    body: `En la diabetes tipo 2 pregestacional, la <strong>insulina</strong> es el tratamiento de elección durante el embarazo y su planificación. El control debe llevarse en una <strong>consulta de alto riesgo obstétrico / endocrinología</strong>, con objetivos guiados por autocontrol glucémico. La mayoría de antidiabéticos no insulínicos y varios fármacos cardiorrenales están contraindicados o no recomendados: revise toda la pauta.`
+  });
+  trace.push('Embarazo: prioridad absoluta. Insulina de elección; se revisan y retiran los fármacos contraindicados.');
+
+  if (hasClass('isglt2')) {
+    recs.push({ type: 'danger', tag: 'Contraindicado en embarazo', title: 'Suspender iSGLT-2', body: `Los iSGLT-2 están contraindicados en el embarazo (seguridad fetal no establecida). <strong>Suspender</strong> y pasar a insulina.` });
+    trace.push('Embarazo: retirada de iSGLT-2.');
+  }
+  if (hasClass('arglp') || hasClass('argip')) {
+    recs.push({ type: 'danger', tag: 'Contraindicado en embarazo', title: 'Suspender arGLP-1 / arGIP-GLP-1', body: `Los agonistas de GLP-1 y el agonista dual GIP/GLP-1 no se recomiendan en el embarazo. <strong>Suspender</strong> (idealmente antes de la concepción, teniendo en cuenta su semivida) y pasar a insulina.` });
+    trace.push('Embarazo: retirada de arGLP-1 / arGIP.');
+  }
+  if (state.drugs.finerenona) {
+    recs.push({ type: 'danger', tag: 'Contraindicado en embarazo', title: 'Suspender Finerenona', body: `La finerenona no debe utilizarse durante el embarazo. <strong>Suspender</strong>.` });
+    trace.push('Embarazo: retirada de finerenona.');
+  }
+  if (state.ras) {
+    recs.push({ type: 'danger', tag: 'Contraindicado en embarazo', title: 'Suspender IECA / ARA-II', body: `Los IECA y ARA-II son <strong>teratógenos</strong> (fetopatía, especialmente en 2.º y 3.er trimestre). Suspender y sustituir por un antihipertensivo seguro en gestación (p. ej. labetalol, alfa-metildopa o nifedipino).` });
+    trace.push('Embarazo: retirada de IECA/ARA-II (teratógenos).');
+  }
+  if (state.drugs.pioglitazona) {
+    recs.push({ type: 'danger', tag: 'No recomendado en embarazo', title: 'Suspender Pioglitazona', body: `No recomendada en el embarazo por datos de seguridad insuficientes. <strong>Suspender</strong>.` });
+    trace.push('Embarazo: retirada de pioglitazona.');
+  }
+  if (hasClass('idpp4')) {
+    recs.push({ type: 'warn', tag: 'No recomendado en embarazo', title: 'Suspender iDPP-4', body: `Datos de seguridad insuficientes en gestación; no recomendados. Sustituir por insulina.` });
+    trace.push('Embarazo: retirada de iDPP-4.');
+  }
+  if (hasClass('su') || hasClass('glinida')) {
+    recs.push({ type: 'warn', tag: 'No recomendado en embarazo', title: 'Suspender secretagogos (SU / Glinidas)', body: `No son de elección; la glibenclamida atraviesa la placenta. Sustituir por insulina.` });
+    trace.push('Embarazo: retirada de secretagogos.');
+  }
+  if (state.drugs.metformina) {
+    recs.push({ type: 'warn', tag: 'No es de primera línea', title: 'Metformina no es de elección en gestación', body: `La metformina atraviesa la placenta y la ADA no la recomienda como primera línea: la <strong>insulina es preferente</strong>. Su continuación puede valorarse de forma individualizada y compartida con obstetricia, pero no como base del control.` });
+    trace.push('Embarazo: metformina no es de primera línea (insulina preferente).');
+  }
+  if (!hasClass('ins')) {
+    recs.push({ type: 'add', tag: 'Tratamiento de elección', title: 'Iniciar / optimizar Insulina', body: `Iniciar insulina como base del control glucémico gestacional, con titulación guiada por autocontrol y seguimiento estrecho en consulta especializada.` });
+    trace.push('Embarazo: se recomienda insulina como tratamiento de base.');
+  }
+}
 
 function handleFragilidad(recs, trace, target) {
   if (state.fragGrade === 'muyGrave') {
@@ -1058,7 +1187,7 @@ function handleECVCoronaria(recs, trace, target) {
   const tieneCardio = hasClass('isglt2') || hasClass('arglp') || hasClass('argip');
   
   if (!tieneCardio) {
-    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar iSGLT-2, arGLP-1 o arGIP/GLP-1', body: `Iniciar terapia con beneficio cardiovascular demostrado independientemente de la HbA1c para frenar eventos MACE coronarios o periféricos.` });
+    recs.push({ type: 'add', tag: 'Añadir 1ª línea', ref: 'ADA 9.7', title: 'Se recomienda iniciar iSGLT-2, arGLP-1 o arGIP/GLP-1', body: `Iniciar terapia con beneficio cardiovascular demostrado, independientemente de la HbA1c, para frenar eventos MACE coronarios o periféricos.<br><br><em>Preferir moléculas con evidencia de desenlace:</em> arGLP-1 (semaglutida s.c., dulaglutida, liraglutida; la ADA 2026 añade <strong>semaglutida oral y tirzepatida</strong> con datos en ASCVD), o iSGLT-2 con beneficio MACE (empagliflozina, canagliflozina). Evite apoyarse en ertugliflozina para este fin (neutra en MACE).` });
     intensified = true;
   }
   
@@ -1080,18 +1209,43 @@ function handleIC(recs, trace, target) {
   let intensified = false;
   const tieneSGLT2 = hasClass('isglt2');
   const tieneIncretina = hasClass('arglp') || hasClass('argip');
-  
+  const feMayor40 = (state.feIC === 'preservada' || state.feIC === 'levemente');
+
+  // nsMRA (finerenona) por IC con FE > 40% — ADA 2026 (FINEARTS-HF), independiente de la albuminuria.
+  // Solo si la vía renal de finerenona no la ha recomendado/diferido ya en esta evaluación.
+  const finerenonaYaTratada = recs.some(r => (r.title || '').toLowerCase().includes('finerenona'));
+  if (feMayor40 && !state.drugs.finerenona && !finerenonaYaTratada) {
+    if (state.fge >= 25 && state.potasio <= 5.0) {
+      recs.push({
+        type: 'add', tag: 'IC FE>40% · nsMRA (ADA 2026)', ref: 'ADA 2026 · FINEARTS-HF', title: 'Se recomienda añadir Finerenona (nsMRA)',
+        body: `En IC sintomática estadio C con <strong>FE > 40%</strong> (preservada o levemente reducida), la ADA 2026 recomienda un <strong>antagonista no esteroideo del receptor mineralocorticoide</strong> con beneficio probado (finerenona; ensayo FINEARTS-HF) para reducir eventos de IC, <strong>independientemente de la albuminuria</strong>.<br><strong>Precaución:</strong> exige eGFR ≥ 25 y K⁺ ≤ 5,0; monitorice potasio a las 4 semanas y suspenda temporalmente si > 5,5 mmol/L.`
+      });
+      trace.push('IC con FE > 40%: nsMRA (finerenona) recomendado por la vía de insuficiencia cardíaca (FINEARTS-HF / ADA 2026).');
+    } else if (state.potasio > 5.0) {
+      recs.push({ type: 'warn', tag: 'Contraindicación Temporal', title: 'nsMRA (Finerenona) diferida por Hiperpotasemia', body: `Indicación de nsMRA por IC con FE > 40%, pero el K⁺ basal es > 5,0 mmol/L. Corrija el potasio antes de iniciar.` });
+    }
+  } else if (state.feIC === 'reducida') {
+    trace.push('IC con FE ≤ 40% (HFrEF): el nsMRA finerenona no aplica (FINEARTS-HF fue FE > 40%; en HFrEF el MRA de elección es esteroideo).');
+  }
+
   if (state.obesidad && !tieneIncretina) {
-    recs.push({ 
-      type: 'add', tag: 'Evidencia A (IC + Obesidad)', title: 'Se recomienda iniciar arGIP/GLP-1 o arGLP-1', 
-      body: `El ensayo SUMMIT y la ADA 2026 establecen que, en pacientes con DM2, obesidad e Insuficiencia Cardíaca (FE preservada), el tratamiento <strong>debe incluir un agonista dual o arGLP-1 independientemente del valor de HbA1c</strong> para mejorar los síntomas y reducir eventos.` 
-    });
-    intensified = true;
+    if (state.feIC === 'preservada') {
+      recs.push({ 
+        type: 'add', tag: 'Evidencia A (HFpEF + Obesidad)', ref: 'ADA 9.9a · SUMMIT', title: 'Se recomienda iniciar arGIP/GLP-1 o arGLP-1', 
+        body: `El ensayo SUMMIT y la ADA 2026 (Rec 9.9a) establecen que, en DM2 con obesidad e <strong>IC con FE preservada (HFpEF) sintomática</strong>, el tratamiento <strong>debe incluir un agonista dual GIP/GLP-1 (o arGLP-1)</strong> con beneficio demostrado sobre los síntomas de IC, <strong>independientemente del valor de HbA1c</strong>.` 
+      });
+      intensified = true;
+    } else {
+      recs.push({
+        type: 'info', tag: 'Manejo del Peso (no por la IC)', title: 'arGLP-1 / arGIP útil por obesidad, no como beneficio en IC',
+        body: `Con <strong>FE ≤ 49%</strong> (levemente reducida o reducida), el beneficio específico del agonista dual GIP/GLP-1 en IC se demostró en HFpEF (SUMMIT), no en este fenotipo. Un arGLP-1 sigue siendo razonable para el <strong>control de peso y glucémico</strong>, pero el pilar pronóstico de la IC en este caso es el <strong>iSGLT-2</strong>.`
+      });
+    }
   }
 
   if (!tieneSGLT2) {
     if(state.fge >= 20) {
-        recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar un iSGLT-2', body: `Pilar fundamental (independiente de HbA1c) por reducción de mortalidad e ingresos por IC.` });
+        recs.push({ type: 'add', tag: 'Añadir 1ª línea', ref: 'ADA 9.8', title: 'Se recomienda iniciar un iSGLT-2', body: `Pilar fundamental (independiente de HbA1c) por reducción de mortalidad e ingresos por IC.` });
         intensified = true;
     }
   }
@@ -1117,7 +1271,7 @@ function handleERC(recs, trace, target) {
   const tieneSGLT2 = hasClass('isglt2');
   
   if (state.fge >= 20 && !tieneSGLT2) {
-    recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda iniciar iSGLT-2', body: `Pilar fundamental en enfermedad renal crónica para ralentizar la caída del FG y la progresión a diálisis.` });
+    recs.push({ type: 'add', tag: 'Añadir 1ª línea', ref: 'ADA 9.10', title: 'Se recomienda iniciar iSGLT-2', body: `Pilar fundamental en enfermedad renal crónica para ralentizar la caída del FG y la progresión a diálisis.` });
     intensified = true;
   }
   
@@ -1127,7 +1281,7 @@ function handleERC(recs, trace, target) {
   }
 
   if (state.hba1c > target.upperBound && (tieneSGLT2 || state.fge < 20) && !hasClass('arglp') && !hasClass('argip')) {
-      recs.push({ type: 'add', tag: '2ª línea', title: 'Se recomienda añadir arGLP-1', body: `Especialmente la semaglutida (respaldada por el estudio FLOW) por su fuerte protección renal adicional al SGLT2 (evitar exenatida/lixisenatida si FG ≤ 30).` });
+      recs.push({ type: 'add', tag: '2ª línea', ref: 'ADA 9.11 · FLOW', title: 'Se recomienda añadir arGLP-1', body: `Especialmente la semaglutida (respaldada por el estudio FLOW) por su fuerte protección renal adicional al SGLT2 (evitar exenatida/lixisenatida si FG ≤ 30).` });
       intensified = true;
   }
   return intensified;
@@ -1141,7 +1295,7 @@ function handleObesidad(recs, trace, target) {
 
   if (!tieneIncretina) {
       if (clasesUsadas > 0 || state.hba1c >= 8.0) {
-        recs.push({ type: 'add', tag: 'Añadir 1ª línea', title: 'Se recomienda asociar arGLP-1 o arGIP/GLP-1', body: `Para pacientes con obesidad que no logran control inicial o debutan muy descompensados, la terapia incretínica es prioritaria por las drásticas pérdidas de peso (10-20%) que atacan la resistencia a la insulina.` });
+        recs.push({ type: 'add', tag: 'Añadir 1ª línea', ref: 'ADA 8.18', title: 'Se recomienda asociar arGLP-1 o arGIP/GLP-1', body: `Para pacientes con obesidad que no logran control inicial o debutan muy descompensados, la terapia incretínica es prioritaria por las drásticas pérdidas de peso (10-20%) que atacan la resistencia a la insulina.<br><br><em>Preferir los de mayor eficacia ponderal:</em> <strong>tirzepatida</strong> o <strong>semaglutida</strong> (ADA 8.18). Tener en cuenta que la retirada brusca recupera gran parte del peso, por lo que se concibe como tratamiento de mantenimiento.` });
         intensified = true;
       } else {
         recs.push({ type: 'ok', tag: 'Inicio Conservador', title: 'Iniciar Metformina + Dieta', body: `En pacientes con obesidad y descontrol glucémico leve/moderado (HbA1c < 8.0%), el pilar inicial sigue siendo la optimización del estilo de vida junto con Metformina.` });
@@ -1176,7 +1330,7 @@ function handleHepatica(recs, trace, target) {
       if (tieneIncretinaB) {
         recs.push({ type: 'info', tag: 'Optimización Hepática', title: 'Considerar cambio a Semaglutida', body: `El paciente toma una incretina de Nivel B para MASH. La <strong>Semaglutida</strong> cuenta con Nivel de Evidencia A (estudio ESSENCE) y aprobación FDA para fibrosis moderada-avanzada, logrando resolución en el 62,9% de casos. Considere el cambio si el objetivo principal es histológico.` });
       } else {
-        recs.push({ type: 'add', tag: 'Añadir 1ª línea (Nivel A)', title: 'Se recomienda iniciar Semaglutida', body: `En pacientes con MASH y fibrosis (o alto riesgo), la <strong>Semaglutida</strong> es el único tratamiento con Nivel de Evidencia A (estudio ESSENCE). Quedan como Nivel B la Tirzepatida, otros arGLP-1 y la Pioglitazona.` });
+        recs.push({ type: 'add', tag: 'Añadir 1ª línea (Nivel A)', ref: 'ADA Secc.4 · ESSENCE', title: 'Se recomienda iniciar Semaglutida', body: `En pacientes con MASH y fibrosis (o alto riesgo), la <strong>Semaglutida</strong> es el único tratamiento con Nivel de Evidencia A (estudio ESSENCE). Quedan como Nivel B la Tirzepatida, otros arGLP-1 y la Pioglitazona.` });
         intensified = true;
       }
   }
@@ -1251,6 +1405,62 @@ function applyGeneralIntensification(recs, trace, target, hasCriticalConflict) {
   }
 }
 
+function getPATarget() {
+  // ADA 2026 (Secc. 10 y 13): objetivo general < 130/80; sistólica < 120 en alto riesgo CV/renal si es seguro;
+  // relajado < 140/90 en fragilidad / esperanza de vida limitada / alto riesgo de efectos adversos.
+  const altoRiesgo = state.ecvCoronaria || state.ictus || state.rcvAlto || state.ic || state.erc || state.uacr === 'macro';
+  const relajar = state.fragilidad || state.deterioro;
+  if (relajar) return { sys: 140, dia: 90, label: '< 140/90 mmHg', ref: 'ADA 13.9', rationale: 'Objetivo relajado por fragilidad, esperanza de vida limitada o alto riesgo de efectos adversos.' };
+  if (altoRiesgo) return { sys: 120, dia: 80, label: 'Sistólica < 120 mmHg (si es seguro)', ref: 'ADA Secc.10 (2026)', rationale: 'Alto riesgo CV/renal: la ADA 2026 recomienda objetivo de sistólica < 120 mmHg si se alcanza con seguridad.' };
+  return { sys: 130, dia: 80, label: '< 130/80 mmHg', ref: 'ADA 10.7', rationale: 'Objetivo general en DM2 con hipertensión.' };
+}
+
+function evaluatePA() {
+  const recs = [];
+
+  if (state.embarazo) {
+    recs.push({ type: 'info', tag: 'PA en gestación', ref: 'ADA Secc.10 · 15', title: 'Antihipertensivos seguros en embarazo', body: `Suspender <strong>IECA/ARA-II</strong> (teratógenos). Usar <strong>labetalol, alfa-metildopa o nifedipino</strong>. El objetivo se individualiza en la consulta de alto riesgo obstétrico.` });
+    return recs;
+  }
+
+  if (!state.pas || !state.pad) {
+    recs.push({ type: 'info', tag: 'Presión arterial', title: 'Introduce la PA', body: `Introduce la presión arterial sistólica y diastólica para evaluar el objetivo y el tratamiento antihipertensivo según la ADA 2026.` });
+    return recs;
+  }
+
+  const t = getPATarget();
+  const enObjetivo = state.pas < t.sys && state.pad < t.dia;
+  const indicacionRAS = state.ecvCoronaria || state.uacr === 'micro' || state.uacr === 'macro';
+  const fuerteRAS = state.uacr === 'macro';
+
+  if (enObjetivo) {
+    recs.push({ type: 'ok', tag: 'En objetivo', ref: t.ref, title: 'PA en objetivo (' + state.pas + '/' + state.pad + ' mmHg)', body: `La PA está dentro del objetivo individualizado (<strong>${t.label}</strong>). ${t.rationale} Mantener y vigilar.${indicacionRAS && !state.ras ? ' <em>Nota: pese a estar en objetivo, en CAD o albuminuria un IECA/ARA-II aporta protección de órgano más allá del control tensional.</em>' : ''}` });
+    return recs;
+  }
+
+  // Fuera de objetivo
+  let cuerpo = `La PA (<strong>${state.pas}/${state.pad} mmHg</strong>) supera el objetivo <strong>${t.label}</strong>. ${t.rationale}<br><br>`;
+  if (indicacionRAS && !state.ras) {
+    cuerpo += `Como primer fármaco se ${fuerteRAS ? '<strong>recomienda firmemente</strong>' : 'sugiere'} un <strong>IECA o ARA-II</strong> (${fuerteRAS ? 'macroalbuminuria' : 'CAD o albuminuria'}), titulando a la dosis máxima tolerada.`;
+  } else if (!indicacionRAS && !state.ras) {
+    cuerpo += `Sin CAD ni albuminuria, vale como primer fármaco un <strong>IECA/ARA-II, un calcioantagonista dihidropiridínico o un diurético tipo tiazida</strong> (clortalidona o indapamida).`;
+  } else {
+    cuerpo += `Ya recibe IECA/ARA-II. Si persiste fuera de objetivo, añadir un segundo fármaco: <strong>calcioantagonista dihidropiridínico</strong> (p. ej. amlodipino) <strong>o diurético tipo tiazida</strong> (clortalidona/indapamida).`;
+  }
+  if (fuerteRAS && state.uacr === 'macro') {
+    cuerpo += `<br><br><em>En macroalbuminuria, recuerde valorar finerenona (ya evaluada en el panel glucémico) para protección cardiorrenal añadida.</em>`;
+  }
+  recs.push({ type: 'add', tag: 'Optimizar PA', ref: t.ref, title: 'Iniciar / intensificar antihipertensivo', body: cuerpo });
+  return recs;
+}
+
+function renderPA(recs) {
+  const el = document.getElementById('paRecs');
+  if (!el) return;
+  if (!recs || recs.length === 0) { el.innerHTML = '<div class="empty-state">—</div>'; return; }
+  el.innerHTML = recs.map(cardHTML).join('');
+}
+
 function renderCurrentDrugs() {
   const el = document.getElementById('currentDrugs');
   const active = Object.entries(state.drugs).filter(([k,v]) => v).map(([k]) => k);
@@ -1258,16 +1468,20 @@ function renderCurrentDrugs() {
   el.innerHTML = active.map(d => `<span class="drug-pill current">${DRUG_LABELS[d]}</span>`).join('');
 }
 
+function cardHTML(r) {
+  const ref = r.ref ? `<span class="rec-ref">${r.ref}</span>` : '';
+  return `
+    <div class="rec-card ${r.type}">
+      <div class="rec-card-tagrow"><div class="rec-card-tag">${r.tag}</div>${ref}</div>
+      <div class="rec-card-title">${r.title}</div>
+      <div class="rec-card-body">${r.body}</div>
+    </div>`;
+}
+
 function renderRecs(recs) {
   const el = document.getElementById('recommendations');
   if (recs.length === 0) { el.innerHTML = '<div class="empty-state">No se pudieron generar recomendaciones.</div>'; return; }
-  el.innerHTML = recs.map(r => `
-    <div class="rec-card ${r.type}">
-      <div class="rec-card-tag">${r.tag}</div>
-      <div class="rec-card-title">${r.title}</div>
-      <div class="rec-card-body">${r.body}</div>
-    </div>
-  `).join('');
+  el.innerHTML = recs.map(cardHTML).join('');
 }
 
 function renderTrace(trace) {
@@ -1285,7 +1499,11 @@ function update() {
   state.potasio = isNaN(potasioRaw) ? 4.5 : potasioRaw;
   state.ras = document.getElementById('ras').value === 'si';
 
+  state.pas = parseFloat(document.getElementById('pas').value) || 0;
+  state.pad = parseFloat(document.getElementById('pad').value) || 0;
+
   state.sintomatico = document.getElementById('sintomatico').checked;
+  state.embarazo = document.getElementById('embarazo').checked;
   state.cirrosis = document.getElementById('cirrosis').checked;
   state.ictus = document.getElementById('ictus').checked;
   state.ecvCoronaria = document.getElementById('ecvCoronaria').checked;
@@ -1304,6 +1522,9 @@ function update() {
   const fragRadio = document.querySelector('input[name="fragGrade"]:checked');
   state.fragGrade = fragRadio ? fragRadio.value : 'moderadaGrave';
 
+  const feRadio = document.querySelector('input[name="feIC"]:checked');
+  state.feIC = feRadio ? feRadio.value : 'preservada';
+
   state.drugs = {};
   document.querySelectorAll('[data-drug]').forEach(cb => { state.drugs[cb.dataset.drug] = cb.checked; });
 
@@ -1312,6 +1533,7 @@ function update() {
   document.getElementById('gme').textContent = gme;
 
   document.getElementById('fragilidadGrade').classList.toggle('active', state.fragilidad);
+  document.getElementById('icFEGrade').classList.toggle('active', state.ic);
   document.querySelectorAll('.check').forEach(c => { const id = c.dataset.check; if (id) c.classList.toggle('checked', state[id] === true); });
   document.querySelectorAll('.radio-pill').forEach(p => { const input = p.querySelector('input'); p.classList.toggle('selected', input.checked); });
   document.querySelectorAll('.drug-class').forEach(dc => { const cls = dc.dataset.drugclass; dc.classList.toggle('has-active', hasClass(cls)); });
@@ -1348,7 +1570,10 @@ function update() {
   document.getElementById('conditionerName').textContent = cond.name;
   document.getElementById('conditionerMeta').textContent = cond.meta;
 
-  renderCurrentDrugs(); renderRecs(recs); renderTrace(trace);
+  const paHint = document.getElementById('paHint');
+  if (paHint) { const pt = getPATarget(); paHint.innerHTML = 'Objetivo: <strong>' + pt.label + '</strong>'; }
+
+  renderCurrentDrugs(); renderRecs(recs); renderTrace(trace); renderPA(evaluatePA());
 }
 
 function resetAll() {
@@ -1360,10 +1585,14 @@ function resetAll() {
   document.getElementById('uacr').value = 'normal';
   document.getElementById('potasio').value = 4.5;
   document.getElementById('ras').value = 'si';
+  document.getElementById('pas').value = 135;
+  document.getElementById('pad').value = 82;
 
   document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
   const fragModGrave = document.querySelector('input[name="fragGrade"][value="moderadaGrave"]');
   if (fragModGrave) fragModGrave.checked = true;
+  const fePres = document.querySelector('input[name="feIC"][value="preservada"]');
+  if (fePres) fePres.checked = true;
   update();
 }
 
